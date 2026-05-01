@@ -1,2 +1,2 @@
-mae,total_under_forecast,total_over_forecast,mean_predicted_demand,mean_true_demand
-60.80208814246863,70.0,16346.563798466528,65.19838443876493,4.9148148148148145
+total_true_demand,total_predicted_demand,total_recommended_order,MAE,RMSE,bias,over_forecast_count,under_forecast_count,exact_zero_actual_count,zero_actual_positive_forecast_count
+1327.0,1206.9223676160502,1998,4.35242318172707,6.204873586629079,-0.44473197179240626,130,130,58,51

@@ -1,22 +1,19 @@
 [project]
 name = "parts-forecasting"
 version = "0.1.0"
-description = "Add your description here"
+description = "Deterministic explainable parts forecasting prototype"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "matplotlib>=3.10.9",
     "numpy>=2.4.4",
-    "openpyxl>=3.1.5",
     "pandas>=3.0.2",
-    "scikit-learn>=1.8.0",
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 
 [dependency-groups]
 dev = [
