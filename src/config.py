@@ -16,11 +16,11 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 OUTPUT_DATA_DIR = DATA_DIR / "output"
 
 INPUT_FILES = {
-    "usage": RAW_DATA_DIR / "usage.csv",
-    "installs": RAW_DATA_DIR / "installs.csv",
-    "emergency": RAW_DATA_DIR / "emergency.csv",
-    "cannibalised": RAW_DATA_DIR / "cannibalised.csv",
-    "stock": RAW_DATA_DIR / "stock.csv",
+    "usage": RAW_DATA_DIR / "usage_data.csv",
+    "installs": RAW_DATA_DIR / "install_data.csv",
+    "emergency": RAW_DATA_DIR / "emergency_orders.csv",
+    "cannibalised": RAW_DATA_DIR / "cannibalised_parts.csv",
+    "stock": RAW_DATA_DIR / "stock_snapshot.csv",
     "mapping": RAW_DATA_DIR / "part_model_mapping.csv",
 }
 
