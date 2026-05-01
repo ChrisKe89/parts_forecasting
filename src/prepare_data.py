@@ -60,7 +60,7 @@ def clean_input_data(data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
 
 def aggregate_monthly(df: pd.DataFrame, group_columns: list[str]) -> pd.DataFrame:
     if df.empty:
-        return df
+        return pd.DataFrame(columns=group_columns + ["month", "qty"])
     monthly = df.copy()
     monthly["month"] = monthly["date"].dt.to_period("M").dt.to_timestamp()
     return monthly.groupby(group_columns + ["month"], as_index=False)["qty"].sum()
@@ -70,13 +70,21 @@ def prepare_monthly_data(cleaned: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataF
     usage = aggregate_monthly(cleaned["usage"], ["part_number", "model"])
     installs = aggregate_monthly(cleaned["installs"], ["model"])
 
-    emergency = cleaned["emergency"].merge(cleaned["mapping"], on="part_number", how="left")
-    emergency = emergency.dropna(subset=["model"]) if not emergency.empty else emergency
-    emergency = aggregate_monthly(emergency, ["part_number", "model"])
+    emergency_input = cleaned["emergency"]
+    if emergency_input.empty:
+        emergency = pd.DataFrame(columns=["part_number", "model", "month", "qty"])
+    else:
+        emergency = emergency_input.merge(cleaned["mapping"], on="part_number", how="left")
+        emergency = emergency.dropna(subset=["model"])
+        emergency = aggregate_monthly(emergency, ["part_number", "model"])
 
-    cannibalised = cleaned["cannibalised"].merge(cleaned["mapping"], on="part_number", how="left")
-    cannibalised = cannibalised.dropna(subset=["model"]) if not cannibalised.empty else cannibalised
-    cannibalised = aggregate_monthly(cannibalised, ["part_number", "model"])
+    cannibalised_input = cleaned["cannibalised"]
+    if cannibalised_input.empty:
+        cannibalised = pd.DataFrame(columns=["part_number", "model", "month", "qty"])
+    else:
+        cannibalised = cannibalised_input.merge(cleaned["mapping"], on="part_number", how="left")
+        cannibalised = cannibalised.dropna(subset=["model"])
+        cannibalised = aggregate_monthly(cannibalised, ["part_number", "model"])
 
     return {
         "usage": usage,

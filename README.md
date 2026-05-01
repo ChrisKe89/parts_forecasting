@@ -11,12 +11,12 @@ Deterministic, lead-time-aware spare parts forecasting prototype.
 
 ## Input files (`data/raw`)
 
-- `usage.csv`: `part_number,model,date,qty`
-- `installs.csv`: `model,date,qty`
-- `emergency.csv`: `part_number,date,qty`
-- `cannibalised.csv`: `part_number,date,qty`
+- `usage_data.csv`: `part_number,model,date,qty`
+- `install_data.csv`: `model,date,qty`
+- `emergency_orders.csv`: `part_number,date,qty`
+- `cannibalised_parts.csv`: `part_number,date,qty`
 - `part_model_mapping.csv`: `part_number,model`
-- `stock.csv` (optional): `part_number,stock_on_hand,stock_on_order,snapshot_date`
+- `stock_snapshot.csv` (optional): `part_number,stock_on_hand,stock_on_order,snapshot_date`
 
 ## Run
 
