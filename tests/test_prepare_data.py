@@ -1,29 +1,22 @@
 import pandas as pd
+import pytest
 
-from parts_forecasting.prepare_data import clean_input_data, prepare_monthly_data
-
-
-def test_prepare_monthly_handles_empty_optional_inputs_without_keyerror():
-    data = {
-        "usage": pd.DataFrame({"part_number": ["p1"], "model": ["m1"], "date": ["2025-01-15"], "qty": [2]}),
-        "installs": pd.DataFrame({"model": ["m1"], "date": ["2025-01-01"], "qty": [10]}),
-        "emergency": pd.DataFrame(columns=["part_number", "date", "qty"]),
-        "cannibalised": pd.DataFrame(columns=["part_number", "date", "qty"]),
-        "mapping": pd.DataFrame({"part_number": ["p1"], "model": ["m1"]}),
-        "stock": pd.DataFrame(columns=["part_number", "stock_on_hand", "stock_on_order", "snapshot_date"]),
-    }
-    monthly = prepare_monthly_data(clean_input_data(data))
-    assert list(monthly["usage"].columns) == ["part_number", "model", "month", "qty"]
+from data.loader import load_inputs
 
 
-def test_clean_input_data_standardizes_casing_types_and_drops_null_keys():
-    data = {
-        "usage": pd.DataFrame({"part_number": [" p1 ", None], "model": [" m1 ", "m2"], "date": ["2025-01-15", "bad-date"], "qty": ["3", "bad"]}),
-        "installs": pd.DataFrame({"model": ["m1"], "date": ["2025-01-01"], "qty": ["5"]}),
-        "emergency": pd.DataFrame(columns=["part_number", "date", "qty"]),
-        "cannibalised": pd.DataFrame(columns=["part_number", "date", "qty"]),
-        "mapping": pd.DataFrame({"part_number": ["p1"], "model": ["m1"]}),
-        "stock": pd.DataFrame({"part_number": ["p1"], "stock_on_hand": ["4"], "stock_on_order": ["1"], "snapshot_date": ["2025-01-31"]}),
-    }
-    usage = clean_input_data(data)["usage"]
-    assert len(usage) == 1 and usage.iloc[0]["part_number"] == "P1"
+def test_load_inputs_validates_required_columns(tmp_path):
+    pd.DataFrame([{"part_id":"P1","part_name":"a","model":"M1","smoothing_group":"A","minimum_order_quantity":1,"lead_time_days":90}]).to_csv(tmp_path/"parts.csv", index=False)
+    pd.DataFrame([{"part_id":"P1","model":"M1","usage_date":"2026-01-01","usage_qty":1,"active_machines":10}]).to_csv(tmp_path/"usage.csv", index=False)
+    pd.DataFrame([{"part_id":"P1","model":"M1","install_date":"2026-01-10","install_qty":1,"install_status":"scheduled","projected_install_confidence":1.0}]).to_csv(tmp_path/"installs.csv", index=False)
+    pd.DataFrame([{"part_id":"P1","model":"M1","snapshot_date":"2026-01-01","stock_on_hand":5,"stock_on_order":0,"expected_arrival_date":"2026-02-01"}]).to_csv(tmp_path/"stock.csv", index=False)
+    loaded = load_inputs(tmp_path)
+    assert pd.api.types.is_datetime64_any_dtype(loaded["usage"]["usage_date"])
+
+
+def test_load_inputs_missing_column_raises(tmp_path):
+    pd.DataFrame([{"part_id":"P1"}]).to_csv(tmp_path/"parts.csv", index=False)
+    pd.DataFrame(columns=["part_id","model","usage_date","usage_qty","active_machines"]).to_csv(tmp_path/"usage.csv", index=False)
+    pd.DataFrame(columns=["part_id","model","install_date","install_qty","install_status","projected_install_confidence"]).to_csv(tmp_path/"installs.csv", index=False)
+    pd.DataFrame(columns=["part_id","model","snapshot_date","stock_on_hand","stock_on_order","expected_arrival_date"]).to_csv(tmp_path/"stock.csv", index=False)
+    with pytest.raises(ValueError):
+        load_inputs(tmp_path)
