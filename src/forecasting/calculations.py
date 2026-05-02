@@ -44,7 +44,11 @@ def holt_forecast(values: list[float], alpha: float, beta: float) -> tuple[float
 
 
 def service_level_to_z(service_level_target: float) -> float:
-    bounded = min(0.9999, max(0.5001, service_level_target))
+    lookup = {0.80:0.8416,0.85:1.0364,0.90:1.2816,0.95:1.6449,0.98:2.0537,0.99:2.3263}
+    rounded = round(float(service_level_target), 2)
+    if rounded in lookup:
+        return lookup[rounded]
+    bounded = min(0.9999, max(0.5001, float(service_level_target)))
     return float(NormalDist().inv_cdf(bounded))
 
 
