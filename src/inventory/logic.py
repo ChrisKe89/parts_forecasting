@@ -1,27 +1,46 @@
 from __future__ import annotations
 
+import math
 import pandas as pd
 
 
-def demand_during_lead_time(forecast: float, lead_time_days: float) -> float:
-    return float(forecast * (lead_time_days / 30.0))
+def demand_during_lead_time(forecast_per_period: float, lead_time_days: float, period_days: int = 7) -> float:
+    lead_time_periods = max(lead_time_days, 0) / period_days
+    return float(forecast_per_period * lead_time_periods)
 
 
 def reorder_point(demand_lt: float, safety_stock: float) -> float:
     return float(demand_lt + safety_stock)
 
 
-def rolling_projected_stock(stock_df: pd.DataFrame, as_of_date: pd.Timestamp, lead_time_days: int, weekly_demand: float) -> float:
-    latest = stock_df.loc[stock_df["snapshot_date"] <= as_of_date].sort_values("snapshot_date").tail(1)
-    if latest.empty:
-        return 0.0
-    on_hand = float(latest.iloc[0]["stock_on_hand"])
-    inbound = stock_df[(stock_df["expected_arrival_date"] <= as_of_date + pd.Timedelta(days=lead_time_days))]["stock_on_order"].sum()
-    demand = weekly_demand * (lead_time_days / 7.0)
-    return float(on_hand + inbound - demand)
+def apply_moq(required_qty: float, minimum_order_quantity: float, reorder_triggered: bool) -> tuple[float, bool]:
+    if (not reorder_triggered) or required_qty <= 0:
+        return 0.0, False
+    final_qty = max(required_qty, minimum_order_quantity)
+    return float(final_qty), bool(final_qty > required_qty)
 
 
-def apply_moq(required_qty: float, minimum_order_quantity: float) -> float:
-    if required_qty <= 0:
-        return 0.0
-    return float(max(required_qty, minimum_order_quantity))
+def rolling_ordering_simulation(
+    on_hand: float,
+    weekly_demand: float,
+    lead_time_days: int,
+    incoming_orders: pd.DataFrame,
+    ordering_date: pd.Timestamp,
+) -> dict[str, float | str | bool | pd.Timestamp]:
+    arrival_date = ordering_date + pd.Timedelta(days=lead_time_days)
+    weeks_to_arrival = max(1, math.ceil(lead_time_days / 7))
+    horizon_demand = weekly_demand * weeks_to_arrival
+    inbound_before_arrival = 0.0
+    if not incoming_orders.empty:
+        inbound_before_arrival = float(
+            incoming_orders[incoming_orders["expected_arrival_date"] <= arrival_date]["stock_on_order"].sum()
+        )
+    projected_stock_at_arrival = float(on_hand + inbound_before_arrival - horizon_demand)
+    stockout_risk_before_arrival = projected_stock_at_arrival < 0
+    return {
+        "ordering_date": ordering_date,
+        "arrival_date": arrival_date,
+        "forecasted_demand_covered": float(horizon_demand),
+        "projected_stock_at_arrival": projected_stock_at_arrival,
+        "stockout_risk_before_arrival": bool(stockout_risk_before_arrival),
+    }

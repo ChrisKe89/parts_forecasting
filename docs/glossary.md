@@ -1,26 +1,25 @@
 # Glossary
 
-Each term includes description, formula, example, interpretation, where used.
-
-- **Exponential smoothing**: weighted forecasting favoring recent demand. Formula: `L_t = alpha*Y_t + (1-alpha)*L_(t-1)`. Example: alpha 0.7 responds faster. Used in base forecast.
-- **Alpha**: smoothing weight by group (A=0.7, B=0.4, C=0.2).
-- **Holt's method**: level + trend smoothing. Formula uses alpha and beta updates for level/trend.
-- **Beta**: trend smoothing factor in Holt.
-- **Trend**: slope in Holt output; positive up, negative down.
-- **Z-score**: `(x-mean)/std_dev`; flags outliers.
-- **Mean**: arithmetic average usage.
-- **Standard deviation**: demand variability magnitude.
-- **Outlier**: point with `|z| > threshold`.
-- **Usage per machine**: `total_part_usage/total_active_machines`.
-- **Scheduled installs**: future installs included at 100%.
-- **Projected installs**: future installs weighted by confidence.
-- **Projected install confidence**: probability multiplier [0,1].
-- **Safety stock**: probabilistic inventory buffer.
-- **Service level**: target fill probability (default 0.90).
-- **Stockout risk**: high when projected stock < reorder point.
-- **Demand during lead time**: `forecast * lead_time_days/30`.
-- **Reorder point**: `demand_during_lead_time + safety_stock`.
-- **MOQ**: minimum order quantity applied after trigger.
-- **MAE**: mean absolute error.
-- **Forecast error**: forecast - actual.
-- **Rolling forecast**: repeated weekly projection.
+- **Forecast**: Statistical estimate of future part demand. Formula: output of smoothing/trend model. Inputs: usage history, smoothing params. Example: 12 units/week.
+- **Base Forecast**: Demand before install adjustments. Formula: exponential smoothing or Holt output. Inputs: usage history. Example: 10.
+- **Final Demand**: Install-adjusted demand. Formula: `Base Forecast + Scheduled Installs + (Projected Installs × Confidence)`. Inputs: base forecast, install quantities/confidence. Example: `10+2+1=13`.
+- **Exponential Smoothing**: Weighted averaging forecast. Formula: `L_t = αY_t + (1-α)L_{t-1}`. Inputs: α, usage series. Example: α=0.4.
+- **Holt’s Method**: Trend-aware smoothing. Formula: level + trend updates. Inputs: α, β, history. Example: rising trend gives higher next forecast.
+- **Trend**: Direction/magnitude of demand change. Formula: Holt trend component. Inputs: time-series history.
+- **Z-score**: Standardized deviation from mean. Formula: `(x-μ)/σ`. Inputs: value, mean, std dev.
+- **MAE**: Mean absolute error. Formula: `mean(|forecast-actual|)`. Inputs: forecast, actual.
+- **Standard Deviation**: Demand variability. Formula: population std dev of usage history. Inputs: usage series.
+- **Safety Stock**: Buffer inventory for uncertainty. Formula: `Z × σ × sqrt(lead_time_periods)`. Inputs: service-level z, std dev, lead-time periods.
+- **Service Level**: Fill-rate target probability. Formula: config target (e.g., 0.90) mapped to z-score. Inputs: target.
+- **Lead-Time Demand**: Demand expected before replenishment arrives. Formula: `forecast_per_period × lead_time_periods`.
+- **Reorder Point (ROP)**: Stock threshold to trigger ordering. Formula: `Lead-Time Demand + Safety Stock`.
+- **Projected Stock**: Estimated inventory after lead-time demand and inbound orders. Inputs: on-hand, inbound, forecast.
+- **MOQ**: Minimum order quantity constraint. Formula: minimum allowable order if triggered.
+- **Required Quantity**: Gap to target stock. Formula: `target_stock - projected_stock`, floored at zero.
+- **Stockout Risk**: Chance inventory drops below zero before arrival. Rule: `projected_stock_at_arrival < 0`.
+- **Usage per Machine**: Average parts consumed per active machine. Formula: `Total Part Usage / Total Active Machines`.
+- **Scheduled Install Demand**: Deterministic demand from confirmed installs. Formula: `scheduled installs × usage_per_machine`.
+- **Projected Install Demand**: Probabilistic install demand. Formula: `projected installs × confidence × usage_per_machine`.
+- **Confidence Factor**: Probability weight for projected installs. Input: projected install confidence column.
+- **Rolling Forecast**: Repeated weekly refresh of demand/order decisions across horizon.
+- **Incoming Orders**: Already placed replenishment pipeline with expected arrival dates.

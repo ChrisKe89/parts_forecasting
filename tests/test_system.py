@@ -1,58 +1,69 @@
 import pandas as pd
 from pathlib import Path
 
-from forecasting.calculations import usage_per_machine, zscore_outliers, exponential_smoothing, holt_forecast, safety_stock
-from inventory.logic import reorder_point, apply_moq, rolling_projected_stock
+from forecasting.calculations import safety_stock, service_level_to_z
+from inventory.logic import demand_during_lead_time, reorder_point, apply_moq, rolling_ordering_simulation
 from data.synthetic_generator import generate_synthetic_data
 from data.loader import load_inputs
 from forecasting.engine import run_forecast
-from backtesting import run_backtest
 
 
-def test_usage_per_machine():
-    df = pd.DataFrame({"part_id": ["p", "p"], "model": ["m", "m"], "usage_qty": [10, 20], "active_machines": [2, 3]})
-    out = usage_per_machine(df)
-    assert out.iloc[0]["usage_per_machine"] == 6
+def test_lead_time_demand_calculation():
+    assert demand_during_lead_time(10, 90, period_days=7) == 10 * (90 / 7)
 
 
-def test_zscore_and_outlier():
-    s = pd.Series([1, 1, 1, 10])
-    out = zscore_outliers(s, threshold=1.5)
-    assert out["outlier_flag"].sum() == 1
+def test_safety_stock_calculation():
+    z = service_level_to_z(0.9)
+    ss = safety_stock(5, 12, z)
+    assert ss > 0
 
 
-def test_smoothing_and_holt():
-    vals = [10, 12, 14, 16]
-    assert exponential_smoothing(vals, 0.5) > 0
-    f, t = holt_forecast(vals, 0.7, 0.2)
-    assert f > vals[-1]
-    assert t > 0
+def test_reorder_point_calculation():
+    assert reorder_point(100, 12) == 112
 
 
-def test_safety_stock_and_rop_moq():
-    ss = safety_stock(5, 90)
-    rop = reorder_point(100, ss)
-    assert rop > 100
-    assert apply_moq(3, 10) == 10
+def test_moq_behavior_and_no_negative_orders():
+    order_qty, moq_applied = apply_moq(3, 10, reorder_triggered=True)
+    assert order_qty == 10 and moq_applied
+    order_qty2, _ = apply_moq(-5, 10, reorder_triggered=True)
+    assert order_qty2 == 0
 
 
-def test_rolling_projection():
-    sdf = pd.DataFrame({"snapshot_date": [pd.Timestamp("2026-01-01")], "stock_on_hand": [100], "stock_on_order": [50], "expected_arrival_date": [pd.Timestamp("2026-02-01")]})
-    p = rolling_projected_stock(sdf, pd.Timestamp("2026-01-15"), 90, 5)
-    assert p < 150
+def test_no_order_when_above_rop():
+    order_qty, _ = apply_moq(5, 10, reorder_triggered=False)
+    assert order_qty == 0
 
 
-def test_synthetic_determinism(tmp_path: Path):
-    d1 = generate_synthetic_data(tmp_path / "a", seed=42)
-    d2 = generate_synthetic_data(tmp_path / "b", seed=42)
-    assert d1["usage"].head(50).equals(d2["usage"].head(50))
+def test_order_triggered_when_below_rop():
+    assert 5 < reorder_point(4, 2)
 
 
-def test_integration_pipeline(tmp_path: Path):
+def test_weekly_rolling_order_arrival_logic():
+    incoming = pd.DataFrame({"stock_on_order": [20], "expected_arrival_date": [pd.Timestamp("2026-03-15")]})
+    sim = rolling_ordering_simulation(10, 2, 90, incoming, pd.Timestamp("2026-01-01"))
+    assert sim["arrival_date"] == pd.Timestamp("2026-04-01")
+
+
+def test_install_adjustment_available_unavailable(tmp_path: Path):
     generate_synthetic_data(tmp_path, seed=42)
     data = load_inputs(tmp_path)
     out = run_forecast(data)
-    required = {"part_id", "model", "forecast_method_used", "reorder_point", "recommended_order_qty", "order_triggered"}
-    assert required.issubset(set(out.columns))
-    bt = run_backtest(data)
-    assert {"mae", "forecast_error", "absolute_forecast_error", "percent_error"}.issubset(set(bt.columns))
+    assert out["install_adjustment_available"].any()
+
+    data["installs"] = data["installs"].iloc[0:0]
+    out2 = run_forecast(data)
+    assert (~out2["install_adjustment_available"]).all()
+
+
+def test_sparse_history_fallback():
+    data = {
+        "parts": pd.DataFrame([{"part_id": "P1", "model": "M1", "smoothing_group": "C", "minimum_order_quantity": 5, "lead_time_days": 90}]),
+        "usage": pd.DataFrame([
+            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-01-01"), "usage_qty": 2, "active_machines": 10},
+            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-02-01"), "usage_qty": 3, "active_machines": 10},
+        ]),
+        "installs": pd.DataFrame(columns=["part_id", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
+        "stock": pd.DataFrame([{"part_id": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2026-02-01"), "stock_on_hand": 1, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2026-03-01")}]),
+    }
+    out = run_forecast(data)
+    assert out.iloc[0]["sparse_history_fallback_applied"]

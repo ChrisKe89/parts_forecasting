@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from statistics import NormalDist
 import pandas as pd
 
 
@@ -42,5 +43,10 @@ def holt_forecast(values: list[float], alpha: float, beta: float) -> tuple[float
     return float(level + trend), float(trend)
 
 
-def safety_stock(demand_std_dev: float, lead_time_days: float, service_level_z: float = 1.2816) -> float:
-    return float(service_level_z * demand_std_dev * math.sqrt(max(lead_time_days, 0) / 30.0))
+def service_level_to_z(service_level_target: float) -> float:
+    bounded = min(0.9999, max(0.5001, service_level_target))
+    return float(NormalDist().inv_cdf(bounded))
+
+
+def safety_stock(demand_std_dev: float, lead_time_periods: float, service_level_z: float) -> float:
+    return float(service_level_z * demand_std_dev * math.sqrt(max(lead_time_periods, 0)))
