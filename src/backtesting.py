@@ -21,8 +21,8 @@ def run_backtest(data: dict[str, pd.DataFrame], train_months: int = 21, test_mon
     test_usage = usage[(usage.usage_date >= test_start) & (usage.usage_date <= end)]
 
     forecast_df = run_forecast({**data, "usage": train_usage}, as_of_date=train_usage["usage_date"].max())
-    actual = test_usage.groupby(["part_id", "model"], as_index=False)["usage_qty"].sum().rename(columns={"usage_qty": "actual_usage"})
-    merged = forecast_df.merge(actual, on=["part_id", "model"], how="left").fillna({"actual_usage": 0})
+    actual = test_usage.groupby(["part_number", "model"], as_index=False)["usage_qty"].sum().rename(columns={"usage_qty": "actual_usage"})
+    merged = forecast_df.merge(actual, on=["part_number", "model"], how="left").fillna({"actual_usage": 0})
 
     merged["forecast_qty"] = merged["final_adjusted_demand"] * (test_months * 30 / 7)
     merged["forecast_error"] = merged["forecast_qty"] - merged["actual_usage"]

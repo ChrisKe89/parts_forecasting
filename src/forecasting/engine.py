@@ -20,9 +20,9 @@ def run_forecast(data: dict[str, pd.DataFrame], config: ForecastingConfig = DEFA
     usage_rates = usage_per_machine(usage)
     rows = []
     for _, part in parts.iterrows():
-        pid, model, group = part["part_id"], part["model"], part["smoothing_group"]
+        pid, model, group = part["part_number"], part["model"], part["smoothing_group"]
         alpha = config.smoothing_groups.get(group, config.smoothing_groups["C"])
-        hist = usage[(usage["part_id"] == pid) & (usage["model"] == model)].sort_values("usage_date")
+        hist = usage[(usage["part_number"] == pid) & (usage["model"] == model)].sort_values("usage_date")
         vals = hist["usage_qty"].tolist()
         zinfo = zscore_outliers(hist["usage_qty"], config.z_threshold) if not hist.empty else pd.DataFrame({"z_score": [0], "outlier_flag": [False], "std_dev": [0]})
         adjusted_vals = vals
@@ -40,9 +40,9 @@ def run_forecast(data: dict[str, pd.DataFrame], config: ForecastingConfig = DEFA
         else:
             base, trend, method = exponential_smoothing(adjusted_vals or [0.0], alpha), 0.0, "exponential_smoothing"
 
-        upr = usage_rates[(usage_rates.part_id == pid) & (usage_rates.model == model)]
+        upr = usage_rates[(usage_rates.part_number == pid) & (usage_rates.model == model)]
         usage_pm = float(upr["usage_per_machine"].iloc[0]) if not upr.empty else 0.0
-        ins = installs[(installs.part_id == pid) & (installs.model == model)]
+        ins = installs[(installs.part_number == pid) & (installs.model == model)]
         install_unavailable = ins.empty
         sparse_history = len(vals) < 6
         scheduled_installs = ins[(ins.install_status == "scheduled") & (ins.install_date > as_of)]
@@ -58,7 +58,7 @@ def run_forecast(data: dict[str, pd.DataFrame], config: ForecastingConfig = DEFA
         dlt = demand_during_lead_time(final_demand_weekly, lead_time_days, period_days=7)
         rop = reorder_point(dlt, ss)
 
-        pstock_df = stock[(stock.part_id == pid) & (stock.model == model)]
+        pstock_df = stock[(stock.part_number == pid) & (stock.model == model)]
         on_hand = float(pstock_df["stock_on_hand"].max()) if not pstock_df.empty else 0.0
         sim = rolling_ordering_simulation(on_hand, final_demand_weekly, int(lead_time_days), pstock_df, as_of)
         projected_stock = float(sim["projected_stock_at_arrival"])
@@ -69,5 +69,5 @@ def run_forecast(data: dict[str, pd.DataFrame], config: ForecastingConfig = DEFA
         moq = float(part.get("minimum_order_quantity", config.moq_default) or config.moq_default)
         final_order_qty, moq_applied = apply_moq(required_qty, moq, reorder_triggered)
 
-        rows.append({"part_id": pid,"model": model,"forecast_method_used": method,"base_forecast": float(base),"weekly_demand_rate": final_demand_weekly,"lead_time_demand": dlt,"demand_std_dev": demand_std,"service_level_target": config.service_level_target,"z_score": z_value,"safety_stock": ss,"projected_stock": projected_stock,"reorder_point": rop,"reorder_triggered": bool(reorder_triggered),"minimum_order_quantity": moq,"required_quantity": required_qty,"final_order_quantity": final_order_qty,"moq_adjustment_applied": bool(moq_applied),"usage_per_machine": usage_pm,"scheduled_install_demand": scheduled_demand,"projected_install_demand": projected_demand,"final_adjusted_demand": final_demand_weekly,"ordering_date": sim["ordering_date"],"arrival_date": sim["arrival_date"],"forecasted_demand_covered": sim["forecasted_demand_covered"],"projected_stock_at_arrival": sim["projected_stock_at_arrival"],"stockout_risk_before_arrival": sim["stockout_risk_before_arrival"],"outlier_count": int(zinfo["outlier_flag"].sum()),"trend_note": "trend significant" if abs(trend) >= config.trend_significance_threshold else "trend not significant", "install_adjustment_available": not install_unavailable, "sparse_history_fallback_applied": sparse_history})
+        rows.append({"part_number": pid,"model": model,"forecast_method_used": method,"base_forecast": float(base),"weekly_demand_rate": final_demand_weekly,"lead_time_demand": dlt,"demand_std_dev": demand_std,"service_level_target": config.service_level_target,"z_score": z_value,"safety_stock": ss,"projected_stock": projected_stock,"reorder_point": rop,"reorder_triggered": bool(reorder_triggered),"minimum_order_quantity": moq,"required_quantity": required_qty,"final_order_quantity": final_order_qty,"moq_adjustment_applied": bool(moq_applied),"usage_per_machine": usage_pm,"scheduled_install_demand": scheduled_demand,"projected_install_demand": projected_demand,"final_adjusted_demand": final_demand_weekly,"ordering_date": sim["ordering_date"],"arrival_date": sim["arrival_date"],"forecasted_demand_covered": sim["forecasted_demand_covered"],"projected_stock_at_arrival": sim["projected_stock_at_arrival"],"stockout_risk_before_arrival": sim["stockout_risk_before_arrival"],"outlier_count": int(zinfo["outlier_flag"].sum()),"trend_note": "trend significant" if abs(trend) >= config.trend_significance_threshold else "trend not significant", "install_adjustment_available": not install_unavailable, "sparse_history_fallback_applied": sparse_history})
     return pd.DataFrame(rows)
