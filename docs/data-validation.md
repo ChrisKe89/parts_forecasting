@@ -66,3 +66,9 @@ Required columns:
 Rules:
 - Errors stop forecasting.
 - Warnings are written to the report and processing continues.
+
+
+## Runtime workflow alignment
+- Normal runtime path validates real CSVs in `data/raw` and does not call synthetic data generation.
+- Missing required files fail with clear errors (including file path).
+- Missing optional `install_forecast.csv` is allowed; processing continues.

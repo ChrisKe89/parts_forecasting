@@ -1,50 +1,129 @@
 from __future__ import annotations
 
 from pathlib import Path
-import warnings
+from typing import Any
 import pandas as pd
 
-from data.schema import REQUIRED_COLUMNS
+REQUIRED_FILES = [
+    "parts_master.csv",
+    "part_model_mapping.csv",
+    "internal_parts_usage.csv",
+    "orders.csv",
+    "stock_snapshot.csv",
+    "open_purchase_orders.csv",
+    "active_machine_population.csv",
+]
+OPTIONAL_FILES = ["install_forecast.csv"]
 
 
-LEGACY_ALIASES = {
-    "part_id": "part_number",
-}
-
-
-def _apply_legacy_aliases(df: pd.DataFrame, key: str) -> pd.DataFrame:
-    for legacy, canonical in LEGACY_ALIASES.items():
-        if legacy in df.columns and canonical not in df.columns:
-            warnings.warn(
-                f"Legacy column '{legacy}' found in {key}; please use '{canonical}'",
-                UserWarning,
-            )
-            df = df.rename(columns={legacy: canonical})
-    return df
-
-
-def _validate(df: pd.DataFrame, key: str) -> pd.DataFrame:
-    df = _apply_legacy_aliases(df, key)
-    missing = [c for c in REQUIRED_COLUMNS[key] if c not in df.columns]
-    if missing:
-        raise ValueError(f"Missing {key} columns: {missing}")
-    return df
-
-
-def load_csv(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path)
-
-
-def load_inputs(base_dir: Path) -> dict[str, pd.DataFrame]:
-    data = {
-        "parts": _validate(load_csv(base_dir / "parts.csv"), "parts"),
-        "usage": _validate(load_csv(base_dir / "usage.csv"), "usage"),
-        "installs": _validate(load_csv(base_dir / "installs.csv"), "installs"),
-        "stock": _validate(load_csv(base_dir / "stock.csv"), "stock"),
+def _issue(file_name: str, column_name: str, row_number: int, severity: str, message: str) -> dict[str, Any]:
+    return {
+        "file_name": file_name,
+        "column_name": column_name,
+        "row_number": row_number,
+        "severity": severity,
+        "message": message,
     }
-    for col in ["usage_date"]:
-        data["usage"][col] = pd.to_datetime(data["usage"][col])
-    data["installs"]["install_date"] = pd.to_datetime(data["installs"]["install_date"])
-    data["stock"]["snapshot_date"] = pd.to_datetime(data["stock"]["snapshot_date"])
-    data["stock"]["expected_arrival_date"] = pd.to_datetime(data["stock"]["expected_arrival_date"])
-    return data
+
+
+def _validate_columns(df: pd.DataFrame, file_name: str, required_columns: list[str], issues: list[dict[str, Any]]) -> bool:
+    ok = True
+    for col in required_columns:
+        if col not in df.columns:
+            issues.append(_issue(file_name, col, 0, "error", f"Missing required column in {file_name}: {col}"))
+            ok = False
+    return ok
+
+
+def _parse_date(df: pd.DataFrame, file_name: str, col: str, issues: list[dict[str, Any]]) -> None:
+    parsed = pd.to_datetime(df[col], errors="coerce")
+    bad = parsed.isna() & df[col].notna()
+    for idx in df[bad].index.tolist():
+        issues.append(_issue(file_name, col, int(idx) + 2, "error", f"Invalid date in {file_name} row {int(idx)+2}: {col}"))
+    df[col] = parsed
+
+
+def _non_negative(df: pd.DataFrame, file_name: str, col: str, issues: list[dict[str, Any]]) -> None:
+    vals = pd.to_numeric(df[col], errors="coerce")
+    bad_type = vals.isna() & df[col].notna()
+    for idx in df[bad_type].index.tolist():
+        issues.append(_issue(file_name, col, int(idx) + 2, "error", f"Invalid numeric value in {file_name} row {int(idx)+2}: {col}"))
+    neg = vals < 0
+    for idx in df[neg.fillna(False)].index.tolist():
+        issues.append(_issue(file_name, col, int(idx) + 2, "error", f"Negative quantity in {file_name} row {int(idx)+2}: {col}"))
+    df[col] = vals
+
+
+def load_inputs(base_dir: Path) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, bool]:
+    issues: list[dict[str, Any]] = []
+    missing_required = [f for f in REQUIRED_FILES if not (base_dir / f).exists()]
+    for f in missing_required:
+        issues.append(_issue(f, "", 0, "error", f"Missing required input file: {base_dir / f}"))
+    if missing_required:
+        return {}, pd.DataFrame(issues, columns=["file_name","column_name","row_number","severity","message"]), False
+
+    frames = {f: pd.read_csv(base_dir / f) for f in REQUIRED_FILES}
+    install_available = (base_dir / "install_forecast.csv").exists()
+    install_df = pd.read_csv(base_dir / "install_forecast.csv") if install_available else pd.DataFrame(columns=["model", "install_date", "install_qty", "install_status", "projected_install_confidence"])
+
+    _validate_columns(frames["parts_master.csv"], "parts_master.csv", ["part_number", "part_description", "smoothing_group", "minimum_order_qty", "default_lead_time_days", "is_active"], issues)
+    _validate_columns(frames["part_model_mapping.csv"], "part_model_mapping.csv", ["part_number", "model"], issues)
+    _validate_columns(frames["internal_parts_usage.csv"], "internal_parts_usage.csv", ["part_number", "model", "usage_date", "usage_qty"], issues)
+    _validate_columns(frames["orders.csv"], "orders.csv", ["order_no", "part_number", "order_qty", "fulfilled_qty", "order_date", "order_source", "order_status", "order_fulfilment_date"], issues)
+    _validate_columns(frames["stock_snapshot.csv"], "stock_snapshot.csv", ["part_number", "stock_snapshot_date", "stock_on_hand_qty", "allocated_qty"], issues)
+    _validate_columns(frames["open_purchase_orders.csv"], "open_purchase_orders.csv", ["purchase_order_no", "part_number", "purchase_order_qty", "received_qty", "open_purchase_order_qty", "purchase_order_date", "purchase_order_status", "expected_arrival_date"], issues)
+    _validate_columns(frames["active_machine_population.csv"], "active_machine_population.csv", ["model", "population_snapshot_date", "active_machine_qty", "owner_group", "service_group"], issues)
+    _validate_columns(install_df, "install_forecast.csv", ["model", "install_date", "install_qty", "install_status", "projected_install_confidence"], issues)
+
+    usage = frames["internal_parts_usage.csv"].copy()
+    _parse_date(usage, "internal_parts_usage.csv", "usage_date", issues)
+    _non_negative(usage, "internal_parts_usage.csv", "usage_qty", issues)
+
+    parts = frames["parts_master.csv"].copy().rename(columns={"part_description": "part_name", "minimum_order_qty": "minimum_order_quantity", "default_lead_time_days": "lead_time_days"})
+    mapping = frames["part_model_mapping.csv"].copy()
+    parts = parts.merge(mapping, on="part_number", how="inner")
+
+    pop = frames["active_machine_population.csv"].copy()
+    _non_negative(pop, "active_machine_population.csv", "active_machine_qty", issues)
+    usage = usage.merge(pop[["model", "active_machine_qty"]], on="model", how="left")
+    missing_pop = usage["active_machine_qty"].isna()
+    for idx in usage[missing_pop].index.tolist():
+        issues.append(_issue("active_machine_population.csv", "model", int(idx)+2, "warning", f"Unknown model in usage population join: {usage.loc[idx, 'model']}"))
+    usage["active_machines"] = usage["active_machine_qty"].fillna(0)
+
+    stock = frames["stock_snapshot.csv"].copy()
+    _parse_date(stock, "stock_snapshot.csv", "stock_snapshot_date", issues)
+    _non_negative(stock, "stock_snapshot.csv", "stock_on_hand_qty", issues)
+    _non_negative(stock, "stock_snapshot.csv", "allocated_qty", issues)
+    orders = frames["orders.csv"].copy()
+    _non_negative(orders, "orders.csv", "order_qty", issues)
+    _non_negative(orders, "orders.csv", "fulfilled_qty", issues)
+    backorder = orders.copy()
+    backorder["unfulfilled_qty"] = (backorder["order_qty"] - backorder["fulfilled_qty"]).clip(lower=0)
+    backorder = backorder[backorder["order_status"].isin(["partially_fulfilled", "backorder"])].groupby("part_number", as_index=False)["unfulfilled_qty"].sum()
+
+    po = frames["open_purchase_orders.csv"].copy()
+    _parse_date(po, "open_purchase_orders.csv", "expected_arrival_date", issues)
+    _non_negative(po, "open_purchase_orders.csv", "open_purchase_order_qty", issues)
+
+    stock = stock.merge(backorder, on="part_number", how="left").fillna({"unfulfilled_qty": 0})
+    stock = stock.merge(mapping, on="part_number", how="left")
+    stock = stock.merge(po[["part_number", "expected_arrival_date", "open_purchase_order_qty"]], on="part_number", how="left")
+    stock = stock.rename(columns={"stock_snapshot_date": "snapshot_date", "stock_on_hand_qty": "stock_on_hand", "open_purchase_order_qty": "stock_on_order"})
+    stock["stock_on_order"] = stock["stock_on_order"].fillna(0)
+    stock["expected_arrival_date"] = pd.to_datetime(stock["expected_arrival_date"], errors="coerce").fillna(stock["snapshot_date"])
+    stock["stock_on_hand"] = stock["stock_on_hand"] - stock["allocated_qty"] - stock["unfulfilled_qty"]
+
+    installs = install_df.copy()
+    if install_available:
+        _parse_date(installs, "install_forecast.csv", "install_date", issues)
+        _non_negative(installs, "install_forecast.csv", "install_qty", issues)
+
+    has_errors = any(i["severity"] == "error" for i in issues)
+    data = {
+        "parts": parts[["part_number", "part_name", "model", "smoothing_group", "minimum_order_quantity", "lead_time_days"]],
+        "usage": usage[["part_number", "model", "usage_date", "usage_qty", "active_machines"]],
+        "installs": installs[["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]] if "part_number" in installs.columns else pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
+        "stock": stock[["part_number", "model", "snapshot_date", "stock_on_hand", "stock_on_order", "expected_arrival_date"]].fillna({"model": ""}),
+    }
+    return data, pd.DataFrame(issues, columns=["file_name","column_name","row_number","severity","message"]), (not has_errors)
