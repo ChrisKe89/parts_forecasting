@@ -24,3 +24,11 @@
 - **Purpose:** Schema-contract validation output for CSV structure/content checks.
 - **Important columns:** file_name, column_name, row_number, severity, message.
 - **Interpretation:** Canonical contract-compliance report; errors stop forecasting and warnings are retained for follow-up.
+
+
+## Runtime behavior
+- Default run: `python -m src.main`
+- Default input directory: `data/raw`
+- Default output directory: `data/output` (created automatically if missing)
+- `install_forecast.csv` is optional; when missing, install adjustment is unavailable and treated as zero contribution.
+- Backtest may be skipped when historical span is insufficient; forecast outputs are still written.

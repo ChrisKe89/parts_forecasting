@@ -43,3 +43,6 @@ pytest -q
 
 ## Notes on test/synthetic data
 Synthetic and test data are for development/testing support only and are not part of normal production workflow.
+
+
+Runtime note: `python -m src.main` reads real CSVs from `data/raw` by default and never generates synthetic data. Use `python -m src.data.synthetic_generator` for synthetic test data only. Backtest runs in default `--mode all` when enough history exists; otherwise forecast still completes and backtest is skipped with a message.

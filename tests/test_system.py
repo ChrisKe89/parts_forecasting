@@ -45,8 +45,12 @@ def test_weekly_rolling_order_arrival_logic():
 
 
 def test_install_adjustment_available_unavailable(tmp_path: Path):
-    generate_synthetic_data(tmp_path, seed=42)
-    data = load_inputs(tmp_path)
+    data = {
+        "parts": pd.DataFrame([{"part_number":"P1","part_name":"x","model":"M1","smoothing_group":"A","minimum_order_quantity":1,"lead_time_days":30}]),
+        "usage": pd.DataFrame([{"part_number":"P1","model":"M1","usage_date":pd.Timestamp("2026-01-01"),"usage_qty":2,"active_machines":10}]),
+        "installs": pd.DataFrame([{"part_number":"P1","model":"M1","install_date":pd.Timestamp("2026-02-01"),"install_qty":1,"install_status":"scheduled","projected_install_confidence":1.0}]),
+        "stock": pd.DataFrame([{"part_number":"P1","model":"M1","snapshot_date":pd.Timestamp("2026-01-01"),"stock_on_hand":5,"stock_on_order":0,"expected_arrival_date":pd.Timestamp("2026-02-01")}]),
+    }
     out = run_forecast(data)
     assert out["install_adjustment_available"].any()
 
