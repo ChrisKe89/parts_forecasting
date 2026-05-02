@@ -1,0 +1,6 @@
+purchase_order_no,part_number,purchase_order_qty,received_qty,open_purchase_order_qty,purchase_order_date,purchase_order_status,expected_arrival_date
+PO90001,CWAA1234,20,0,20,2026-04-01,open,2026-06-30
+PO90002,CWAA1234,15,5,10,2026-03-01,partially_received,2026-05-30
+PO90003,CWAA5678,50,0,50,2026-04-15,open,2026-07-14
+PO90004,CWAA9999,5,0,5,2026-04-01,open,2026-07-30
+PO90005,CWAA5678,10,10,0,2026-02-10,received,2026-04-15

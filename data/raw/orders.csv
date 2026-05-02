@@ -1,0 +1,7 @@
+order_no,part_number,order_qty,fulfilled_qty,order_date,order_source,order_status,order_fulfilment_date
+SO10001,CWAA1234,8,8,2026-01-10,dealer,fulfilled,2026-01-12
+SO10002,CWAA1234,6,3,2026-03-05,dealer,partially_fulfilled,2026-03-08
+SO10003,CWAA5678,15,0,2026-04-15,dealer,backorder,
+SO10004,CWAA5678,4,4,2026-04-20,direct,fulfilled,2026-04-21
+SO10005,CWAA9999,2,1,2026-04-25,dealer,partially_fulfilled,2026-04-26
+SO10006,CWAA1234,5,0,2026-04-28,internal,backorder,

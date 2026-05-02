@@ -1,0 +1,4 @@
+part_number,part_description,smoothing_group,minimum_order_qty,default_lead_time_days,is_active
+CWAA1234,Fuser Unit,A,5,90,true
+CWAA5678,Feed Roll Kit,B,10,90,true
+CWAA9999,Transfer Belt,C,2,120,true

@@ -1,0 +1,6 @@
+model,install_date,install_qty,install_status,projected_install_confidence
+Apeos C7070,2026-06-15,10,scheduled,1.0
+Apeos C6570,2026-07-10,6,scheduled,1.0
+Apeos C7070,2026-08-01,12,projected,0.6
+Apeos C6570,2026-08-20,8,projected,0.5
+Apeos C6570,2026-09-01,3,cancelled,0.0
