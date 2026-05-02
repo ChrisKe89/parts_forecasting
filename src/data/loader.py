@@ -1,12 +1,30 @@
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 import pandas as pd
 
 from data.schema import REQUIRED_COLUMNS
 
 
+LEGACY_ALIASES = {
+    "part_id": "part_number",
+}
+
+
+def _apply_legacy_aliases(df: pd.DataFrame, key: str) -> pd.DataFrame:
+    for legacy, canonical in LEGACY_ALIASES.items():
+        if legacy in df.columns and canonical not in df.columns:
+            warnings.warn(
+                f"Legacy column '{legacy}' found in {key}; please use '{canonical}'",
+                UserWarning,
+            )
+            df = df.rename(columns={legacy: canonical})
+    return df
+
+
 def _validate(df: pd.DataFrame, key: str) -> pd.DataFrame:
+    df = _apply_legacy_aliases(df, key)
     missing = [c for c in REQUIRED_COLUMNS[key] if c not in df.columns]
     if missing:
         raise ValueError(f"Missing {key} columns: {missing}")

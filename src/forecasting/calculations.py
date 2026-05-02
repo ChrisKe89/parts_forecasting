@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def usage_per_machine(usage_df: pd.DataFrame) -> pd.DataFrame:
-    grouped = usage_df.groupby(["part_id", "model"], as_index=False).agg(
+    grouped = usage_df.groupby(["part_number", "model"], as_index=False).agg(
         total_part_usage=("usage_qty", "sum"),
         total_active_machines=("active_machines", "sum"),
     )

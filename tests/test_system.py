@@ -57,13 +57,13 @@ def test_install_adjustment_available_unavailable(tmp_path: Path):
 
 def test_sparse_history_fallback():
     data = {
-        "parts": pd.DataFrame([{"part_id": "P1", "model": "M1", "smoothing_group": "C", "minimum_order_quantity": 5, "lead_time_days": 90}]),
+        "parts": pd.DataFrame([{"part_number": "P1", "model": "M1", "smoothing_group": "C", "minimum_order_quantity": 5, "lead_time_days": 90}]),
         "usage": pd.DataFrame([
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-01-01"), "usage_qty": 2, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-02-01"), "usage_qty": 3, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-01-01"), "usage_qty": 2, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-02-01"), "usage_qty": 3, "active_machines": 10},
         ]),
-        "installs": pd.DataFrame(columns=["part_id", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": pd.DataFrame([{"part_id": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2026-02-01"), "stock_on_hand": 1, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2026-03-01")}]),
+        "installs": pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
+        "stock": pd.DataFrame([{"part_number": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2026-02-01"), "stock_on_hand": 1, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2026-03-01")}]),
     }
     out = run_forecast(data)
     assert out.iloc[0]["sparse_history_fallback_applied"]

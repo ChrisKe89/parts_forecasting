@@ -17,7 +17,7 @@ def generate_synthetic_data(output_dir: Path, seed: int = DEFAULT_CONFIG.random_
     part_rows = []
     for p in parts:
         m = models[rng.integers(0, n_models)]
-        part_rows.append({"part_id": p, "part_name": f"Part {p}", "model": m, "smoothing_group": rng.choice(["A", "B", "C"]), "minimum_order_quantity": int(rng.choice([0, 5, 10, 20, 50])), "lead_time_days": int(rng.integers(45, 121)), "behavior": rng.choice(behaviors)})
+        part_rows.append({"part_number": p, "part_name": f"Part {p}", "model": m, "smoothing_group": rng.choice(["A", "B", "C"]), "minimum_order_quantity": int(rng.choice([0, 5, 10, 20, 50])), "lead_time_days": int(rng.integers(45, 121)), "behavior": rng.choice(behaviors)})
     parts_df = pd.DataFrame(part_rows)
 
     usage_dates = pd.date_range(end=pd.Timestamp("2026-04-30"), periods=24, freq="MS")
@@ -29,7 +29,7 @@ def generate_synthetic_data(output_dir: Path, seed: int = DEFAULT_CONFIG.random_
             qty = max(0, int(round(base + noise)))
             if rng.random() < 0.005:
                 qty *= 5
-            usage_rows.append({"part_id": p.part_id, "model": p.model, "usage_date": d, "usage_qty": qty, "active_machines": int(rng.integers(20, 200))})
+            usage_rows.append({"part_number": p.part_number, "model": p.model, "usage_date": d, "usage_qty": qty, "active_machines": int(rng.integers(20, 200))})
     usage_df = pd.DataFrame(usage_rows)
 
     install_rows = []
@@ -38,11 +38,11 @@ def generate_synthetic_data(output_dir: Path, seed: int = DEFAULT_CONFIG.random_
     fut_proj = pd.date_range(start=pd.Timestamp("2026-11-01"), periods=6, freq="MS")
     for _, p in parts_df.iterrows():
         for d in hist_installs:
-            install_rows.append({"part_id": p.part_id, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 10)), "install_status": "historical", "projected_install_confidence": 1.0})
+            install_rows.append({"part_number": p.part_number, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 10)), "install_status": "historical", "projected_install_confidence": 1.0})
         for d in fut_sched:
-            install_rows.append({"part_id": p.part_id, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 8)), "install_status": "scheduled", "projected_install_confidence": 1.0})
+            install_rows.append({"part_number": p.part_number, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 8)), "install_status": "scheduled", "projected_install_confidence": 1.0})
         for d in fut_proj:
-            install_rows.append({"part_id": p.part_id, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 8)), "install_status": "projected", "projected_install_confidence": float(rng.uniform(0.3, 0.95))})
+            install_rows.append({"part_number": p.part_number, "model": p.model, "install_date": d, "install_qty": int(rng.integers(0, 8)), "install_status": "projected", "projected_install_confidence": float(rng.uniform(0.3, 0.95))})
     installs_df = pd.DataFrame(install_rows)
 
     stock_rows = []
@@ -52,7 +52,7 @@ def generate_synthetic_data(output_dir: Path, seed: int = DEFAULT_CONFIG.random_
         for d in snaps:
             soh = int(rng.integers(0, 40) if risk == "stockout" else (rng.integers(200, 500) if risk == "overstock" else rng.integers(30, 150)))
             soo = int(rng.integers(0, 100))
-            stock_rows.append({"part_id": p.part_id, "model": p.model, "snapshot_date": d, "stock_on_hand": soh, "stock_on_order": soo, "expected_arrival_date": d + pd.Timedelta(days=int(rng.integers(7, 140)))})
+            stock_rows.append({"part_number": p.part_number, "model": p.model, "snapshot_date": d, "stock_on_hand": soh, "stock_on_order": soo, "expected_arrival_date": d + pd.Timedelta(days=int(rng.integers(7, 140)))})
     stock_df = pd.DataFrame(stock_rows)
 
     parts_out = parts_df.drop(columns=["behavior"])

@@ -14,17 +14,17 @@ def test_service_level_lookup_values():
 
 def test_outlier_adjustment_reduces_spike_impact():
     data = {
-        "parts": pd.DataFrame([{"part_id": "P1", "part_name": "x", "model": "M1", "smoothing_group": "A", "minimum_order_quantity": 1, "lead_time_days": 90}]),
+        "parts": pd.DataFrame([{"part_number": "P1", "part_name": "x", "model": "M1", "smoothing_group": "A", "minimum_order_quantity": 1, "lead_time_days": 90}]),
         "usage": pd.DataFrame([
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-01-01"), "usage_qty": 5, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-02-01"), "usage_qty": 6, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-03-01"), "usage_qty": 1000, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-04-01"), "usage_qty": 5, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-05-01"), "usage_qty": 6, "active_machines": 10},
-            {"part_id": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-06-01"), "usage_qty": 5, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-01-01"), "usage_qty": 5, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-02-01"), "usage_qty": 6, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-03-01"), "usage_qty": 1000, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-04-01"), "usage_qty": 5, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-05-01"), "usage_qty": 6, "active_machines": 10},
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-06-01"), "usage_qty": 5, "active_machines": 10},
         ]),
-        "installs": pd.DataFrame(columns=["part_id", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": pd.DataFrame([{"part_id": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2025-06-01"), "stock_on_hand": 10, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2025-07-01")}]),
+        "installs": pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
+        "stock": pd.DataFrame([{"part_number": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2025-06-01"), "stock_on_hand": 10, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2025-07-01")}]),
     }
     out = run_forecast(data, config=ForecastingConfig(z_threshold=2.0))
     assert out.iloc[0]["outlier_count"] >= 1
