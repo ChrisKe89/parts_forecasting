@@ -1,30 +1,45 @@
-# parts_forecasting
+# Parts Forecasting System
 
-Deterministic, lead-time-aware spare parts forecasting prototype.
+Deterministic, explainable spare-parts demand forecasting and inventory reorder recommendation.
 
-## Structure
+## What the system does
+- Validates schema-defined CSV inputs.
+- Forecasts part-level demand using internal usage, dealer demand, and install adjustments.
+- Computes stock position, reorder point, and MOQ-constrained order recommendations.
+- Produces forecast, backtest, and validation outputs.
 
-- `data/raw`: input CSV files
-- `data/processed`: optional intermediate outputs
-- `data/output`: backtest outputs
-- `src`: forecasting pipeline modules
+## Input file location
+Place input CSVs in your configured raw data directory (commonly `data/raw/`) using the exact filenames and headers documented in `docs/data-schema.md`.
 
-## Input files (`data/raw`)
+## Required input files
+- `parts_master.csv`
+- `part_model_mapping.csv`
+- `internal_parts_usage.csv`
+- `orders.csv`
+- `stock_snapshot.csv`
+- `open_purchase_orders.csv`
+- `active_machine_population.csv`
 
-- `usage_data.csv`: `part_number,model,date,qty`
-- `install_data.csv`: `model,date,qty`
-- `emergency_orders.csv`: `part_number,date,qty`
-- `cannibalised_parts.csv`: `part_number,date,qty`
-- `part_model_mapping.csv`: `part_number,model`
-- `stock_snapshot.csv` (optional): `part_number,stock_on_hand,stock_on_order,snapshot_date`
+## Optional input file
+- `install_forecast.csv`
 
-## Run
-
+## How to run
 ```bash
 python -m src.main
 ```
 
-## Outputs
+## Expected outputs
+See `docs/output-reference.md` for output definitions:
+- `forecast_output.csv`
+- `backtest_output.csv`
+- `validation_report.csv`
+- `validation_summary.csv`
+- `schema_validation_report.csv`
 
-- `data/output/forecast_backtest_results.csv`
-- `data/output/forecast_backtest_summary.csv`
+## Run tests
+```bash
+pytest -q
+```
+
+## Notes on test/synthetic data
+Synthetic and test data are for development/testing support only and are not part of normal production workflow.

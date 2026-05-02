@@ -1,14 +1,5 @@
 # Implementation Notes
 
-## Commands
-
-- Install deps: `pip install -r requirements.txt`
-- Generate synthetic data: `python -m src.main`
-- Run forecast: `python -m src.main`
-- Run tests: `pytest`
-- Run backtests: `python -m src.main` (writes `data/output/backtest_output.csv`)
-
-## Determinism
-
-Synthetic generator uses fixed seed (`42`) by default.
-All methods are statistical and deterministic.
+- Forecasting and inventory outputs are contract-driven by `docs/parts-forecasting-prd.md` and `docs/data-schema.md`.
+- Input CSV validation behavior is defined in `docs/data-validation.md`.
+- Documentation now reflects production-style data contracts; follow-up code alignment tasks may still be required where runtime loaders use legacy field names.

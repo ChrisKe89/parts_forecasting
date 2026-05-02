@@ -1,8 +1,4 @@
-📄 agents.md (REPLACEMENT)
-
 # Parts Forecasting System — Agent Execution Guide
-
----
 
 ## 1. Purpose
 
@@ -14,8 +10,6 @@ Objectives:
 - Enforce PRD alignment
 - Ensure deterministic, explainable outputs
 - Prevent uncontrolled changes
-
----
 
 ## 2. Source of Truth
 
@@ -31,8 +25,6 @@ Rule:
 > If any conflict exists, the PRD takes precedence.
 
 Agents MUST NOT invent new behaviour outside these documents.
-
----
 
 ## 3. Core System Constraints (NON-NEGOTIABLE)
 
@@ -51,8 +43,6 @@ Agents MUST NOT:
 - Introduce hidden state, caching side-effects, or implicit behaviour
 - Add undocumented assumptions
 
----
-
 ## 4. Data Contract (CRITICAL)
 
 The system is schema-driven.
@@ -70,17 +60,18 @@ Strict rules:
 - No generic names (e.g. `date`, `qty`)
 - No silent coercion of invalid data
 
----
-
 ## 5. Architecture
 
 The system is structured as:
 
-/src /data          # load + validate /forecasting   # demand modelling /inventory     # stock + ordering logic /utils         # config + helpers /tests /docs
+- `/src/data` — load + validate
+- `/src/forecasting` — demand modelling
+- `/src/inventory` — stock + ordering logic
+- `/src/utils` — config + helpers
+- `/tests`
+- `/docs`
 
 Agents MUST NOT introduce parallel or duplicate architectures.
-
----
 
 ## 6. Forecasting Rules
 
@@ -115,44 +106,32 @@ Agents MUST implement exactly:
 - Scheduled = 100%
 - Projected = weighted by confidence
 
----
-
 ## 7. Inventory Rules
 
 Agents MUST implement exactly:
 
 ### 7.1 Stock Position
 
-effective_stock = stock_on_hand
-
-allocated_qty
-
-backorder_qty
-
+`effective_stock = stock_on_hand - allocated_qty - backorder_qty`
 
 ### 7.2 Pipeline Supply
 
-pipeline_supply = sum(open_purchase_orders arriving before target date)
+`pipeline_supply = sum(open_purchase_orders arriving before target date)`
 
 ### 7.3 Demand
 
-final_demand = forecast_demand
-
-install_adjustment
-
+`final_demand = forecast_demand + install_adjustment`
 
 ### 7.4 Reorder Logic
 
-ROP = lead_time_demand + safety_stock
+`ROP = lead_time_demand + safety_stock`
 
-IF projected_stock < ROP: trigger order ELSE: no order
+If projected stock is below ROP, trigger order; otherwise no order.
 
 ### 7.5 MOQ
 
 - Applied AFTER order quantity is calculated
 - Must not affect reorder trigger
-
----
 
 ## 8. Orders & Demand Separation
 
@@ -165,8 +144,6 @@ Agents MUST enforce:
 - `open_purchase_orders.csv` = supply (NOT demand)
 
 Mixing these is a critical failure.
-
----
 
 ## 9. Validation Requirements
 
@@ -189,9 +166,7 @@ Agents MUST implement:
 
 All issues must be written to:
 
-schema_validation_report.csv
-
----
+`schema_validation_report.csv`
 
 ## 10. Testing Requirements
 
@@ -212,8 +187,6 @@ Required coverage:
 - MOQ handling
 - Backtest metrics
 
----
-
 ## 11. Backtesting
 
 Agents MUST support:
@@ -230,8 +203,6 @@ Metrics required:
 - Service level estimate
 - Stockout count
 
----
-
 ## 12. Logging & Traceability
 
 Agents MUST:
@@ -242,8 +213,6 @@ Agents MUST:
 
 Agents MUST NOT introduce noisy or excessive logging.
 
----
-
 ## 13. Change Control
 
 Agents MUST:
@@ -251,8 +220,6 @@ Agents MUST:
 - Make small, isolated changes
 - Avoid broad refactors unless instructed
 - Keep commits logically scoped
-
----
 
 ## 14. Stop Conditions
 
@@ -263,8 +230,6 @@ Agents MUST STOP immediately if:
 - Required data assumptions are missing
 - Behaviour would change unintentionally
 
----
-
 ## 15. Out of Scope (STRICT)
 
 Agents MUST NOT implement:
@@ -274,13 +239,8 @@ Agents MUST NOT implement:
 - Auto-tuning algorithms
 - Heuristic optimisation layers
 
----
-
 ## 16. Final Rule
 
 If uncertain:
 
 > Do not guess. Follow the PRD or stop.
-
-
----
