@@ -1,25 +1,25 @@
 # Glossary
 
-- **Forecast**: Statistical estimate of future part demand. Formula: output of smoothing/trend model. Inputs: usage history, smoothing params. Example: 12 units/week.
-- **Base Forecast**: Demand before install adjustments. Formula: exponential smoothing or Holt output. Inputs: usage history. Example: 10.
-- **Final Demand**: Install-adjusted demand. Formula: `Base Forecast + Scheduled Installs + (Projected Installs × Confidence)`. Inputs: base forecast, install quantities/confidence. Example: `10+2+1=13`.
-- **Exponential Smoothing**: Weighted averaging forecast. Formula: `L_t = αY_t + (1-α)L_{t-1}`. Inputs: α, usage series. Example: α=0.4.
-- **Holt’s Method**: Trend-aware smoothing. Formula: level + trend updates. Inputs: α, β, history. Example: rising trend gives higher next forecast.
-- **Trend**: Direction/magnitude of demand change. Formula: Holt trend component. Inputs: time-series history.
-- **Z-score**: Standardized deviation from mean. Formula: `(x-μ)/σ`. Inputs: value, mean, std dev.
-- **MAE**: Mean absolute error. Formula: `mean(|forecast-actual|)`. Inputs: forecast, actual.
-- **Standard Deviation**: Demand variability. Formula: population std dev of usage history. Inputs: usage series.
-- **Safety Stock**: Buffer inventory for uncertainty. Formula: `Z × σ × sqrt(lead_time_periods)`. Inputs: service-level z, std dev, lead-time periods.
-- **Service Level**: Fill-rate target probability. Formula: config target (e.g., 0.90) mapped to z-score. Inputs: target.
-- **Lead-Time Demand**: Demand expected before replenishment arrives. Formula: `forecast_per_period × lead_time_periods`.
-- **Reorder Point (ROP)**: Stock threshold to trigger ordering. Formula: `Lead-Time Demand + Safety Stock`.
-- **Projected Stock**: Estimated inventory after lead-time demand and inbound orders. Inputs: on-hand, inbound, forecast.
-- **MOQ**: Minimum order quantity constraint. Formula: minimum allowable order if triggered.
-- **Required Quantity**: Gap to target stock. Formula: `target_stock - projected_stock`, floored at zero.
-- **Stockout Risk**: Chance inventory drops below zero before arrival. Rule: `projected_stock_at_arrival < 0`.
-- **Usage per Machine**: Average parts consumed per active machine. Formula: `Total Part Usage / Total Active Machines`.
-- **Scheduled Install Demand**: Deterministic demand from confirmed installs. Formula: `scheduled installs × usage_per_machine`.
-- **Projected Install Demand**: Probabilistic install demand. Formula: `projected installs × confidence × usage_per_machine`.
-- **Confidence Factor**: Probability weight for projected installs. Input: projected install confidence column.
-- **Rolling Forecast**: Repeated weekly refresh of demand/order decisions across horizon.
-- **Incoming Orders**: Already placed replenishment pipeline with expected arrival dates.
+- **Usage per machine:** Average internal part usage per active machine for a model and time window. Formula: `usage_per_machine = total_usage / active_machine_qty`.
+- **Base forecast:** Demand estimate from historical usage before dealer/install adjustments.
+- **Final demand:** Forecast used by inventory logic. Formula: `final_demand = base_forecast + dealer_demand + install_demand`.
+- **Dealer demand:** Part-level demand from `orders.csv` rows with `order_source=dealer`.
+- **Install demand:** Demand adjustment from install forecast. Scheduled installs count at 100%; projected installs are confidence-weighted.
+- **Allocated stock:** Inventory already reserved for existing commitments.
+- **Backorder:** Unfulfilled order quantity that remains outstanding.
+- **Unfulfilled quantity:** Remaining order amount. Formula: `unfulfilled_qty = order_qty - fulfilled_qty`.
+- **Effective stock:** Usable stock after commitments. Formula: `effective_stock = stock_on_hand_qty - allocated_qty - backorder_qty`.
+- **Pipeline supply:** Open PO quantity expected to arrive by a planning cutoff.
+- **Lead time demand:** Expected demand over replenishment lead time.
+- **Safety stock:** Buffer inventory for uncertainty, commonly `z_score × demand_std_dev × sqrt(lead_time_periods)`.
+- **Reorder point:** Trigger threshold. Formula: `reorder_point = lead_time_demand + safety_stock`.
+- **MOQ (Minimum Order Quantity):** Smallest supplier-acceptable order quantity.
+- **Projected stock:** Expected stock at target date after demand and inbound supply.
+- **Stockout risk:** Indicator that projected stock may go below zero or below required service threshold.
+- **Z-score:** Standardized distance from mean used for outlier detection.
+- **Exponential smoothing:** Weighted forecasting method emphasizing recent history.
+- **Holt trend:** Double exponential smoothing with level and trend components.
+- **MAE:** Mean Absolute Error.
+- **RMSE:** Root Mean Squared Error.
+- **Forecast bias:** Directional average error (over- vs under-forecast tendency).
+- **Service level:** Estimated proportion of demand met without stockout.
