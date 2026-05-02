@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.config import TRAINING_WINDOW_MONTHS
+from config import TRAINING_WINDOW_MONTHS
 
 
 def build_installed_base(installs_monthly: pd.DataFrame) -> pd.DataFrame:
