@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.config import EVALUATION_WINDOW_DAYS, LEAD_TIME_DAYS, TRAINING_WINDOW_MONTHS
-from src.feature_engineering import compute_forecast_features
-from src.forecast import calculate_predicted_demand
-from src.ordering import compute_recommended_order
+from config import EVALUATION_WINDOW_DAYS, LEAD_TIME_DAYS, TRAINING_WINDOW_MONTHS
+from feature_engineering import compute_forecast_features
+from forecast import calculate_predicted_demand
+from ordering import compute_recommended_order
 
 
 def _true_demand_for_window(

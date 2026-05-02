@@ -6,7 +6,7 @@ import math
 
 import pandas as pd
 
-from src.config import MINIMUM_ORDER_QTY, SAFETY_BUFFER_PERCENT
+from config import MINIMUM_ORDER_QTY, SAFETY_BUFFER_PERCENT
 
 
 def compute_recommended_order(forecast_df: pd.DataFrame, stock_df: pd.DataFrame, forecast_date: pd.Timestamp) -> pd.DataFrame:
