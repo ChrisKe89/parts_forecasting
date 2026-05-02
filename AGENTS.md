@@ -1,280 +1,301 @@
-# AGENTS.md — Parts Forecasting V1
-
-## 🎯 Mission
-
-Build a **deterministic, explainable forecasting prototype** that:
-
-- Predicts spare parts demand for the **post–lead-time window**
-- Simulates real-world ordering decisions
-- Backtests forecasts against actual demand
-- Demonstrates improvement over current manual ordering
+Parts Forecasting System — Agent Execution Guide
 
 ---
 
-## 🧠 Core Model Principle (DO NOT VIOLATE)
+1. Purpose
 
-This system does NOT forecast the next 90 days.
+This document defines how AI agents (e.g. Codex) must operate when working on the Parts Forecasting System.
 
-It forecasts:
+The goal is to ensure:
 
-Demand occurring AFTER lead time.
-
-Forecast Window = [T + 90 days → T + 180 days]
-
-Where:
-- T = forecast decision date
+- Safe, incremental development
+- No unintended behaviour changes
+- Full alignment with the PRD
+- Reproducible and testable outputs
 
 ---
 
-## ⚠️ Hard Constraints
+2. Source of Truth
 
-The agent MUST:
+The following documents are authoritative:
 
-- ❌ NOT use machine learning
-- ❌ NOT introduce probabilistic models
-- ❌ NOT use external APIs
-- ❌ NOT add databases
-- ❌ NOT introduce dashboards
-- ❌ NOT change data schema without instruction
-- ❌ NOT use future data (no leakage)
+- "/docs/parts-forecasting-prd.md"
+- "/docs/glossary.md"
+- "/docs/data_dictionary.md"
 
-The agent MUST:
+If a conflict exists:
 
-- ✅ keep logic deterministic and explainable
-- ✅ use only CSV-based data
-- ✅ follow the defined folder structure
-- ✅ implement lead-time-aware backtesting exactly
+«PRD takes precedence over all implementation decisions.»
 
 ---
 
-## 📁 Project Structure (STRICT)
+3. System Principles (DO NOT VIOLATE)
 
-parts-forecasting-v1/
+Agents MUST:
 
-├── data/ │   ├── raw/ │   ├── processed/ │   └── output/ │ ├── src/ │   ├── config.py │   ├── load_data.py │   ├── prepare_data.py │   ├── feature_engineering.py │   ├── forecast.py │   ├── ordering.py │   ├── backtest.py │   └── main.py │ └── README.md
+- Preserve existing behaviour unless explicitly instructed
+- Keep all calculations explainable
+- Avoid introducing black-box logic
+- Maintain deterministic outputs (same input → same output)
+- Keep all transformations traceable
 
-Do not restructure without explicit instruction.
+Agents MUST NOT:
 
----
-
-## 📦 Required Input Schema
-
-### Usage Data
-
-part_number model date qty
-
-### Install Data
-
-model date qty
-
-### Emergency Orders
-
-part_number date qty
-
-### Cannibalised Parts
-
-part_number date qty
-
-### Stock Snapshot (Optional)
-
-part_number stock_on_hand stock_on_order snapshot_date
-
-### Part ↔ Model Mapping
-
-part_number model
+- Introduce machine learning models
+- Change calculation definitions
+- Modify column meanings or formats
+- Introduce hidden state or side effects
+- Optimise prematurely
 
 ---
 
-## 🧱 Data Rules
+4. Architecture Overview
 
-- Dates must be parsed as datetime
-- All aggregation must support monthly grouping
-- Part numbers and models must be uppercase
-- Null keys must be removed
-- Quantity must be numeric
+The system is composed of the following layers:
 
----
+4.1 Data Layer
 
-## 🧠 Feature Engineering Rules
+- Raw input ingestion
+- Data validation
+- Schema enforcement
 
-At forecast time T:
+4.2 Processing Layer
 
-### Recent Usage Trend
+- Outlier detection (Z-score)
+- Usage per machine calculation
+- Demand modelling:
+  - Exponential smoothing
+  - Holt’s method (conditional)
+- Install-driven demand adjustment
 
-avg usage over last 3 months × 3
+4.3 Inventory Logic Layer
 
-### Usage Rate
+- Lead time demand calculation
+- Safety stock calculation
+- Reorder point calculation
+- MOQ handling
 
-total usage (training window) / average installed base (training window)
+4.4 Output Layer
 
-### Installed Base Demand
-
-installed_base_at_T × usage_rate_90
-
-### Growth Adjustment
-
-installs_last_3_months × usage_rate_90
-
----
-
-## 🔮 Forecast Formula (FIXED)
-
-predicted_demand = recent_usage_trend
-
-installed_base_demand
-
-growth_adjustment
-
-
-Do not alter this formula.
+- Forecast outputs
+- Risk metrics
+- Order recommendations
 
 ---
 
-## 📦 Ordering Logic
+5. File & Module Structure
 
-recommended_order = predicted_demand
+Agents should organise code as follows:
 
-safety_buffer
-
-
-stock_on_hand
-
-stock_on_order
-
-
-Rules:
-
-- negative → 0
-- round up
-- minimum order = 1 if demand > 0
+/src
+  /data
+  /forecasting
+  /inventory
+  /utils
+/tests
+/docs
 
 ---
 
-## 🔁 Backtesting (CRITICAL)
+6. Implementation Rules
 
-### Windows Definition
+6.1 One Responsibility per Module
 
-At forecast date T:
-
-Training Window: [T - 9 months → T]
-
-Lead-Time Gap: [T → T + 90 days]
-
-Evaluation Window: [T + 90 → T + 180 days]
-
-### Strict Rules
-
-- Do NOT use data from lead-time gap
-- Do NOT use data from evaluation window
-- Only compare forecast vs actual in evaluation window
+Each file must have a single clear purpose.
 
 ---
 
-## 📊 True Demand Definition
+6.2 No Hidden Logic
 
-true_demand = usage
+All calculations must:
 
-emergency_orders
-
-cannibalised_parts
-
-
-Calculated ONLY inside evaluation window.
+- Be explicitly defined in code
+- Match PRD definitions
+- Be easy to trace
 
 ---
 
-## 🔁 Rolling Backtest
+6.3 Naming Conventions
 
-Agent MUST implement:
+Use clear, explicit names:
 
-for each valid forecast date T: train on past 9 months forecast future window compute actual demand store result
+GOOD:
 
-Must support ~10+ forecast runs using 24 months data.
+- "usage_per_machine"
+- "reorder_point"
+- "safety_stock"
 
----
+BAD:
 
-## 📤 Output Requirements
-
-Each row must contain:
-
-forecast_date part_number model
-
-training_start training_end
-
-lead_time_start lead_time_end
-
-evaluation_start evaluation_end
-
-predicted_demand true_demand
-
-recommended_order safety_buffer
-
-forecast_error absolute_error
-
-under_forecast_qty over_forecast_qty
+- "calc1"
+- "temp_val"
+- "x"
 
 ---
 
-## 🧪 Execution Order (MANDATORY)
+6.4 No Magic Numbers
 
-1. Implement data loading
-2. Implement data cleaning
-3. Implement monthly aggregation
-4. Implement installed base calculation
-5. Implement single forecast point (hardcoded T)
-6. Implement true demand calculation
-7. Implement forecast vs actual comparison
-8. Implement rolling backtest loop
-9. Implement CSV output
-10. Implement summary metrics
+All constants must come from config:
 
-Agent must NOT skip steps.
+forecasting:
+  smoothing_groups:
+    A: 0.7
 
 ---
 
-## 🧭 Development Rules
+7. Forecasting Logic Requirements
 
-- One logical change per commit
-- Do not mix refactoring with feature work
-- Preserve behaviour unless explicitly changing logic
-- Stop if uncertainty impacts correctness of model
+Agents MUST implement:
 
----
+7.1 Outlier Detection
 
-## 🚫 Known Failure Modes (Avoid These)
-
-The agent must NOT:
-
-- compare forecast to immediate next 90 days
-- include lead-time gap in evaluation
-- mix training and evaluation data
-- assume stock history exists
-- over-engineer the solution
+- Z-score calculation
+- Configurable threshold
+- Exclusion or flagging based on config
 
 ---
 
-## 🎯 Definition of Done (V1)
+7.2 Usage per Machine
 
-The system is complete when:
-
-- Forecasts are generated for all parts
-- Rolling backtest runs successfully
-- Forecast vs actual is calculated correctly
-- Output CSV is produced
-- No future data leakage occurs
-- Results are explainable
+- Calculated per part + model
+- Aligned time window
 
 ---
 
-## 💡 Guiding Principle
+7.3 Exponential Smoothing
 
-This is NOT a perfect forecasting system.
+- Group-based (A/B/C)
+- Config-driven alpha values
 
-This is a **proof that structured logic improves ordering decisions**.
+---
 
-Keep it simple.
-Keep it correct.
-Do not overbuild.
+7.4 Holt’s Method
 
+- Only applied when:
+  - sufficient history exists
+  - trend is significant
+
+---
+
+7.5 Install Adjustments
+
+- Scheduled installs = 100% included
+- Projected installs = weighted by confidence
+
+---
+
+8. Inventory Logic Requirements
+
+Agents MUST implement:
+
+8.1 Lead Time Demand
+
+- Based on forecast × lead time
+
+---
+
+8.2 Reorder Point (ROP)
+
+- ROP = demand during lead time + safety stock
+
+---
+
+8.3 Order Trigger
+
+if projected_stock < reorder_point:
+    trigger order
+
+---
+
+8.4 MOQ Handling
+
+- Applied AFTER order quantity is calculated
+- Must not affect reorder trigger
+
+---
+
+9. Testing Requirements
+
+Agents MUST:
+
+- Add unit tests for every calculation
+- Validate against known examples
+- Ensure deterministic outputs
+
+Test categories:
+
+- Z-score correctness
+- Smoothing accuracy
+- Trend detection
+- Install adjustments
+- Inventory logic
+
+---
+
+10. Backtesting Requirements
+
+Agents MUST support:
+
+- Training window (e.g. 9 months)
+- Testing window (e.g. 3 months)
+- Comparison of forecast vs actual
+
+Metrics to include:
+
+- MAE
+- Forecast error distribution
+
+---
+
+11. Logging & Debugging
+
+Agents MUST:
+
+- Log intermediate calculations
+- Allow traceability per part
+- Provide debug output for:
+  - forecast components
+  - install adjustments
+  - inventory decisions
+
+---
+
+12. Change Management
+
+Agents MUST:
+
+- Make small, incremental changes
+- Use one commit per logical change
+- Avoid large refactors without instruction
+
+---
+
+13. Stop Conditions
+
+Agents MUST STOP if:
+
+- A change alters calculation definitions
+- PRD is unclear or conflicting
+- Data assumptions are missing
+- Behaviour would change unexpectedly
+
+---
+
+14. Future Scope (DO NOT IMPLEMENT)
+
+The following are explicitly out of scope:
+
+- Machine learning models
+- Gradient boosting
+- Automated hyperparameter tuning
+- Reinforcement learning
+
+---
+
+15. Final Rule
+
+If unsure:
+
+«Do not guess. Follow the PRD or stop.»
 
 ---
