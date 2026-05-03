@@ -15,4 +15,4 @@
 
 ## Behavior Changes
 
-- Output schema has been enriched with PRD-required fields (e.g., `lead_time_window_start`, `required_quantity`, `final_order_quantity`, `explanation`) while preserving core pipeline operation and CLI behavior.
+- Output schema uses part-level decision rows and includes stock traceability fields (`stock_on_hand_qty`, `allocated_qty`, `backorder_qty`, `effective_stock_qty`, `pipeline_supply_qty`) plus deterministic `recommendation_explanation`. Model-level calculations remain supporting inputs and are aggregated before reorder logic.

@@ -107,12 +107,10 @@ def load_inputs(base_dir: Path) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, 
     _non_negative(po, "open_purchase_orders.csv", "open_purchase_order_qty", issues)
 
     stock = stock.merge(backorder, on="part_number", how="left").fillna({"unfulfilled_qty": 0})
-    stock = stock.merge(mapping, on="part_number", how="left")
     stock = stock.merge(po[["part_number", "expected_arrival_date", "open_purchase_order_qty"]], on="part_number", how="left")
-    stock = stock.rename(columns={"stock_snapshot_date": "snapshot_date", "stock_on_hand_qty": "stock_on_hand", "open_purchase_order_qty": "stock_on_order"})
-    stock["stock_on_order"] = stock["stock_on_order"].fillna(0)
+    stock = stock.rename(columns={"stock_snapshot_date": "snapshot_date"})
+    stock["open_purchase_order_qty"] = stock["open_purchase_order_qty"].fillna(0)
     stock["expected_arrival_date"] = pd.to_datetime(stock["expected_arrival_date"], errors="coerce").fillna(stock["snapshot_date"])
-    stock["stock_on_hand"] = stock["stock_on_hand"] - stock["allocated_qty"] - stock["unfulfilled_qty"]
 
     installs = install_df.copy()
     if install_available:
@@ -124,6 +122,6 @@ def load_inputs(base_dir: Path) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, 
         "parts": parts[["part_number", "part_name", "model", "smoothing_group", "minimum_order_quantity", "lead_time_days"]],
         "usage": usage[["part_number", "model", "usage_date", "usage_qty", "active_machines"]],
         "installs": installs[["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]] if "part_number" in installs.columns else pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": stock[["part_number", "model", "snapshot_date", "stock_on_hand", "stock_on_order", "expected_arrival_date"]].fillna({"model": ""}),
+        "stock": stock[["part_number", "snapshot_date", "stock_on_hand_qty", "allocated_qty", "unfulfilled_qty", "open_purchase_order_qty", "expected_arrival_date"]],
     }
     return data, pd.DataFrame(issues, columns=["file_name","column_name","row_number","severity","message"]), (not has_errors)

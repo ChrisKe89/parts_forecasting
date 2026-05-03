@@ -14,7 +14,7 @@
 - **Safety stock:** Buffer inventory for uncertainty, commonly `z_score × demand_std_dev × sqrt(lead_time_periods)`.
 - **Reorder point:** Trigger threshold. Formula: `reorder_point = lead_time_demand + safety_stock`.
 - **MOQ (Minimum Order Quantity):** Smallest supplier-acceptable order quantity.
-- **Projected stock:** Expected stock at target date after demand and inbound supply.
+- **Projected stock:** Expected stock at target date after demand and inbound supply. In this system, final projected stock and reorder decisions are computed per `part_number` after model-level signals are aggregated.
 - **Stockout risk:** Indicator that projected stock may go below zero or below required service threshold.
 - **Z-score:** Standardized distance from mean used for outlier detection.
 - **Exponential smoothing:** Weighted forecasting method emphasizing recent history.

@@ -24,7 +24,7 @@ def test_outlier_adjustment_reduces_spike_impact():
             {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2025-06-01"), "usage_qty": 5, "active_machines": 10},
         ]),
         "installs": pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": pd.DataFrame([{"part_number": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2025-06-01"), "stock_on_hand": 10, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2025-07-01")}]),
+        "stock": pd.DataFrame([{"part_number": "P1", "snapshot_date": pd.Timestamp("2025-06-01"), "stock_on_hand_qty": 10, "allocated_qty": 0, "unfulfilled_qty": 0, "open_purchase_order_qty": 0, "expected_arrival_date": pd.Timestamp("2025-07-01")}]),
     }
     out = run_forecast(data, config=ForecastingConfig(z_threshold=2.0))
     assert out.iloc[0]["outlier_count"] >= 1
@@ -43,7 +43,7 @@ def test_backtest_has_required_metrics(tmp_path):
             {"part_number":"P1","model":"M1","usage_date":pd.Timestamp("2025-06-01"),"usage_qty":4,"active_machines":10},
         ]),
         "installs": pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": pd.DataFrame([{"part_number":"P1","model":"M1","snapshot_date":pd.Timestamp("2025-06-01"),"stock_on_hand":10,"stock_on_order":0,"expected_arrival_date":pd.Timestamp("2025-07-01")}]),
+        "stock": pd.DataFrame([{"part_number":"P1","snapshot_date":pd.Timestamp("2025-06-01"),"stock_on_hand_qty":10,"allocated_qty":0,"unfulfilled_qty":0,"open_purchase_order_qty":0,"expected_arrival_date":pd.Timestamp("2025-07-01")}]),
     }
     result = run_backtest(data, train_months=3, test_months=2)
     for c in ["mae", "rmse", "forecast_bias", "under_forecast_count", "over_forecast_count", "service_level_estimate", "stockout_count"]:

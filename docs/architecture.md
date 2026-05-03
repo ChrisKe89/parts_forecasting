@@ -34,3 +34,7 @@ Dealer orders arrive as part orders and often lack reliable model attribution; f
 
 ## Why Open Purchase Orders Are Supply, Not Demand
 Open purchase orders represent committed inbound inventory. Treating them as demand would double-count needs and distort projected stock and reorder recommendations.
+
+
+### Decision layer output
+Final inventory decisions are generated at `part_number` grain. Trace fields in `forecast_output.csv` include `stock_on_hand_qty`, `allocated_qty`, `backorder_qty`, `effective_stock_qty`, and `pipeline_supply_qty` to keep projected-stock and reorder calculations explainable.
