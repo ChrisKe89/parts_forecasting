@@ -1,6 +1,6 @@
 import pandas as pd
 
-from data.loader import load_inputs
+from src.data.loader import load_inputs
 
 
 def test_load_inputs_missing_required_files_fails(tmp_path):

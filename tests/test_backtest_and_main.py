@@ -1,10 +1,10 @@
 import pandas as pd
 
-from backtesting import run_backtest
-from data.synthetic_generator import generate_synthetic_data
-from forecasting.calculations import service_level_to_z
-from forecasting.engine import run_forecast
-from utils.config import ForecastingConfig
+from src.backtesting import run_backtest
+from src.data.synthetic_generator import generate_synthetic_data
+from src.forecasting.calculations import service_level_to_z
+from src.forecasting.engine import run_forecast
+from src.utils.config import ForecastingConfig
 
 
 def test_service_level_lookup_values():

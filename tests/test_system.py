@@ -1,11 +1,11 @@
 import pandas as pd
 from pathlib import Path
 
-from forecasting.calculations import safety_stock, service_level_to_z
-from inventory.logic import demand_during_lead_time, reorder_point, apply_moq, rolling_ordering_simulation
-from data.synthetic_generator import generate_synthetic_data
-from data.loader import load_inputs
-from forecasting.engine import run_forecast
+from src.forecasting.calculations import safety_stock, service_level_to_z
+from src.inventory.logic import demand_during_lead_time, reorder_point, apply_moq, rolling_ordering_simulation
+from src.data.synthetic_generator import generate_synthetic_data
+from src.data.loader import load_inputs
+from src.forecasting.engine import run_forecast
 
 
 def test_lead_time_demand_calculation():

@@ -4,9 +4,9 @@ import argparse
 from pathlib import Path
 import pandas as pd
 
-from data.loader import load_inputs
-from forecasting.engine import run_forecast
-from backtesting import run_backtest
+from .data.loader import load_inputs
+from .forecasting.engine import run_forecast
+from .backtesting import run_backtest
 
 
 def _can_run_backtest(usage: pd.DataFrame, min_months: int = 6) -> bool:

@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from utils.config import DEFAULT_CONFIG
+from ..utils.config import DEFAULT_CONFIG
 
 
 def generate_synthetic_data(output_dir: Path, seed: int = DEFAULT_CONFIG.random_seed) -> dict[str, pd.DataFrame]:

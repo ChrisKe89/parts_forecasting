@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from main import main
+from src.main import main
 
 
 def _write_base_inputs(base: Path, with_install: bool = True, short_history: bool = False) -> None:
