@@ -1,8 +1,10 @@
 # Backtesting
 
-Supported windows:
-- 21 month train + 3 month test
-- 9 month train + 3 month test
+Backtesting uses deterministic date slicing with configurable train/test windows.
+
+Default runtime window:
+- 18 month train
+- 6 month test
 
 Metrics:
 - MAE = mean(|forecast - actual|)
