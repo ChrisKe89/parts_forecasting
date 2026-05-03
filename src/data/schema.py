@@ -9,6 +9,6 @@ REQUIRED_COLUMNS = {
         "part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence",
     ],
     "stock": [
-        "part_number", "model", "snapshot_date", "stock_on_hand", "stock_on_order", "expected_arrival_date",
+        "part_number", "snapshot_date", "stock_on_hand_qty", "allocated_qty", "unfulfilled_qty", "open_purchase_order_qty", "expected_arrival_date",
     ],
 }

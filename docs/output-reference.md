@@ -2,7 +2,8 @@
 
 ## forecast_output.csv
 - **Purpose:** Primary part-level forecast and reorder recommendation output.
-- **Important columns:** part_number, base_forecast, final_demand, effective_stock, pipeline_supply, lead_time_demand, safety_stock, reorder_point, projected_stock, recommended_order_qty, minimum_order_qty.
+- **Important columns:** part_number, base_forecast, final_adjusted_demand, stock_on_hand_qty, allocated_qty, backorder_qty, effective_stock_qty, pipeline_supply_qty, lead_time_demand, safety_stock, reorder_point, projected_stock, reorder_triggered, required_quantity, final_order_quantity, recommendation_explanation.
+- **Decision grain:** exactly one recommendation row per active `part_number`; model-level signals are aggregated before inventory decisioning.
 - **Interpretation:** Use to review demand outlook and whether reorder is triggered under current constraints.
 
 ## backtest_output.csv

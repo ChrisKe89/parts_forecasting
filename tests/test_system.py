@@ -49,7 +49,7 @@ def test_install_adjustment_available_unavailable(tmp_path: Path):
         "parts": pd.DataFrame([{"part_number":"P1","part_name":"x","model":"M1","smoothing_group":"A","minimum_order_quantity":1,"lead_time_days":30}]),
         "usage": pd.DataFrame([{"part_number":"P1","model":"M1","usage_date":pd.Timestamp("2026-01-01"),"usage_qty":2,"active_machines":10}]),
         "installs": pd.DataFrame([{"part_number":"P1","model":"M1","install_date":pd.Timestamp("2026-02-01"),"install_qty":1,"install_status":"scheduled","projected_install_confidence":1.0}]),
-        "stock": pd.DataFrame([{"part_number":"P1","model":"M1","snapshot_date":pd.Timestamp("2026-01-01"),"stock_on_hand":5,"stock_on_order":0,"expected_arrival_date":pd.Timestamp("2026-02-01")}]),
+        "stock": pd.DataFrame([{"part_number":"P1","snapshot_date":pd.Timestamp("2026-01-01"),"stock_on_hand_qty":5,"allocated_qty":0,"unfulfilled_qty":0,"open_purchase_order_qty":0,"expected_arrival_date":pd.Timestamp("2026-02-01")}]),
     }
     out = run_forecast(data)
     assert out["install_adjustment_available"].any()
@@ -67,7 +67,36 @@ def test_sparse_history_fallback():
             {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-02-01"), "usage_qty": 3, "active_machines": 10},
         ]),
         "installs": pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
-        "stock": pd.DataFrame([{"part_number": "P1", "model": "M1", "snapshot_date": pd.Timestamp("2026-02-01"), "stock_on_hand": 1, "stock_on_order": 0, "expected_arrival_date": pd.Timestamp("2026-03-01")}]),
+        "stock": pd.DataFrame([{"part_number": "P1", "snapshot_date": pd.Timestamp("2026-02-01"), "stock_on_hand_qty": 1, "allocated_qty": 0, "unfulfilled_qty": 0, "open_purchase_order_qty": 0, "expected_arrival_date": pd.Timestamp("2026-03-01")}]),
     }
     out = run_forecast(data)
     assert out.iloc[0]["sparse_history_fallback_applied"]
+
+def test_part_level_aggregation_and_trace_fields():
+    data = {
+        "parts": pd.DataFrame([
+            {"part_number": "P1", "part_name": "x", "model": "M1", "smoothing_group": "A", "minimum_order_quantity": 12, "lead_time_days": 30},
+            {"part_number": "P1", "part_name": "x", "model": "M2", "smoothing_group": "A", "minimum_order_quantity": 12, "lead_time_days": 30},
+        ]),
+        "usage": pd.DataFrame([
+            {"part_number": "P1", "model": "M1", "usage_date": pd.Timestamp("2026-01-01"), "usage_qty": 5, "active_machines": 10},
+            {"part_number": "P1", "model": "M2", "usage_date": pd.Timestamp("2026-01-01"), "usage_qty": 7, "active_machines": 14},
+        ]),
+        "installs": pd.DataFrame([
+            {"part_number": "P1", "model": "M1", "install_date": pd.Timestamp("2026-02-01"), "install_qty": 3, "install_status": "scheduled", "projected_install_confidence": 1.0},
+            {"part_number": "P1", "model": "M2", "install_date": pd.Timestamp("2026-02-01"), "install_qty": 2, "install_status": "projected", "projected_install_confidence": 0.5},
+        ]),
+        "stock": pd.DataFrame([
+            {"part_number": "P1", "snapshot_date": pd.Timestamp("2026-01-01"), "stock_on_hand_qty": 20, "allocated_qty": 2, "unfulfilled_qty": 3, "open_purchase_order_qty": 10, "expected_arrival_date": pd.Timestamp("2026-01-20")},
+        ]),
+    }
+    out = run_forecast(data, as_of_date=pd.Timestamp("2026-01-01"))
+    assert len(out) == 1
+    row = out.iloc[0]
+    assert row["stock_on_hand_qty"] == 20
+    assert row["allocated_qty"] == 2
+    assert row["backorder_qty"] == 3
+    assert row["effective_stock_qty"] == 15
+    assert row["pipeline_supply_qty"] == 10
+    assert row["install_adjustment_available"]
+    assert isinstance(row["recommendation_explanation"], str) and row["recommendation_explanation"]

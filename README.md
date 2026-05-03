@@ -6,7 +6,7 @@ Deterministic, explainable spare-parts demand forecasting and inventory reorder 
 
 - Validates schema-defined CSV inputs.
 - Forecasts part-level demand using internal usage, dealer demand, and install adjustments.
-- Computes stock position, reorder point, and MOQ-constrained order recommendations.
+- Computes stock position, reorder point, and MOQ-constrained order recommendations with one final decision row per part_number (model-level inputs are aggregated).
 - Produces forecast, backtest, and validation outputs.
 
 ## Input file location
