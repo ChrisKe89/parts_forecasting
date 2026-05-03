@@ -20,6 +20,32 @@ def apply_moq(required_qty: float, minimum_order_quantity: float, reorder_trigge
     return float(final_qty), bool(final_qty > required_qty)
 
 
+def apply_order_constraints(raw_recommended_qty: float, minimum_order_qty: float, order_multiple_qty: float) -> dict[str, float | bool]:
+    if raw_recommended_qty <= 0:
+        return {
+            "raw_recommended_qty": 0.0,
+            "final_order_qty": 0.0,
+            "moq_applied": False,
+            "order_multiple_applied": False,
+        }
+    final_qty = float(raw_recommended_qty)
+    moq_applied = False
+    multiple_applied = False
+    if minimum_order_qty > 0 and final_qty < minimum_order_qty:
+        final_qty = float(minimum_order_qty)
+        moq_applied = True
+    if order_multiple_qty and order_multiple_qty > 1:
+        rounded = math.ceil(final_qty / order_multiple_qty) * order_multiple_qty
+        multiple_applied = rounded != final_qty
+        final_qty = float(rounded)
+    return {
+        "raw_recommended_qty": float(raw_recommended_qty),
+        "final_order_qty": float(final_qty),
+        "moq_applied": bool(moq_applied),
+        "order_multiple_applied": bool(multiple_applied),
+    }
+
+
 def rolling_ordering_simulation(
     on_hand: float,
     weekly_demand: float,
