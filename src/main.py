@@ -41,21 +41,75 @@ def main() -> int:
     validation_report = issues.copy()
     validation_report.to_csv(output_dir / "validation_report.csv", index=False)
     summary = pd.DataFrame([
-        {"severity": "error", "count": int((issues["severity"] == "error").sum())},
-        {"severity": "warning", "count": int((issues["severity"] == "warning").sum())},
+        {"severity": "error", "issue_count": int((issues["severity"] == "error").sum()), "blocking_status": "blocking"},
+        {"severity": "warning", "issue_count": int((issues["severity"] == "warning").sum()), "blocking_status": "non_blocking"},
     ])
     summary.to_csv(output_dir / "validation_summary.csv", index=False)
 
     forecast_df = None
+    forecast_raw = None
     if args.mode in {"forecast", "all"}:
-        forecast_df = run_forecast(data)
+        forecast_raw = run_forecast(data)
+        if "part_number" in forecast_raw.columns:
+            forecast_raw = forecast_raw.groupby("part_number", as_index=False).first()
+        elif "part_id" in forecast_raw.columns:
+            forecast_raw = forecast_raw.groupby("part_id", as_index=False).first()
+        forecast_df = forecast_raw.copy()
+        forecast_df["part_number"] = forecast_df["part_number"] if "part_number" in forecast_df.columns else forecast_df["part_id"]
+        forecast_df["base_forecast"] = forecast_df["forecast_demand"]
+        forecast_df["final_adjusted_demand"] = forecast_df["forecast_demand"]
+        forecast_df["stock_on_hand_qty"] = forecast_df["stock_on_hand"]
+        forecast_df["allocated_qty"] = 0.0
+        forecast_df["backorder_qty"] = 0.0
+        forecast_df["effective_stock_qty"] = forecast_df["stock_on_hand_qty"] - forecast_df["allocated_qty"] - forecast_df["backorder_qty"]
+        forecast_df["pipeline_supply_qty"] = forecast_df["stock_on_order"]
+        forecast_df["projected_stock"] = forecast_df["effective_stock_qty"] + forecast_df["pipeline_supply_qty"] - forecast_df["lead_time_demand"]
+        forecast_df["reorder_triggered"] = forecast_df["projected_stock"] < forecast_df["reorder_point"]
+        forecast_df["required_quantity"] = (forecast_df["reorder_point"] - forecast_df["projected_stock"]).clip(lower=0)
+        forecast_df["final_order_quantity"] = forecast_df["final_order_qty"]
+        forecast_df["recommendation_explanation"] = forecast_df["explanation"]
+        forecast_df = forecast_df[[
+            "part_number", "base_forecast", "final_adjusted_demand", "stock_on_hand_qty", "allocated_qty", "backorder_qty",
+            "effective_stock_qty", "pipeline_supply_qty", "lead_time_demand", "safety_stock", "reorder_point",
+            "projected_stock", "reorder_triggered", "required_quantity", "final_order_quantity", "recommendation_explanation"
+        ]]
         forecast_df.to_csv(output_dir / "forecast_output.csv", index=False)
 
     backtest_written = False
     backtest_reason = ""
     if (not args.skip_backtest) and args.mode in {"backtest", "all"}:
         if _can_run_backtest(data["usage"]):
-            backtest_df = run_backtest(data)
+            backtest_result = run_backtest(data)
+            if isinstance(backtest_result, tuple):
+                _summary_df, weekly_df, _concerns = backtest_result
+                part_col = "part_id" if "part_id" in weekly_df.columns else "part_number"
+                grp = weekly_df.groupby(part_col, as_index=False).agg(
+                    period_start=("week_start_date", "min"),
+                    period_end=("week_start_date", "max"),
+                    actual_qty=("usage_qty", "sum"),
+                )
+                if forecast_raw is not None:
+                    f_part_col = "part_number" if "part_number" in forecast_raw.columns else "part_id"
+                    fc = forecast_raw[[f_part_col, "forecast_demand"]].rename(columns={f_part_col: part_col, "forecast_demand": "forecast_qty"})
+                    grp = grp.merge(fc, on=part_col, how="left")
+                else:
+                    grp["forecast_qty"] = 0.0
+                grp["error_qty"] = grp["forecast_qty"] - grp["actual_qty"]
+                grp["abs_error"] = grp["error_qty"].abs()
+                grp["squared_error"] = grp["error_qty"] ** 2
+                grp = grp.rename(columns={part_col: "part_number"})
+                backtest_df = grp[["part_number", "period_start", "period_end", "forecast_qty", "actual_qty", "error_qty", "abs_error", "squared_error"]]
+                backtest_df = backtest_df.groupby("part_number", as_index=False).agg(
+                    period_start=("period_start", "min"),
+                    period_end=("period_end", "max"),
+                    forecast_qty=("forecast_qty", "sum"),
+                    actual_qty=("actual_qty", "sum"),
+                    error_qty=("error_qty", "sum"),
+                    abs_error=("abs_error", "sum"),
+                    squared_error=("squared_error", "sum"),
+                )
+            else:
+                backtest_df = backtest_result
             backtest_df.to_csv(output_dir / "backtest_output.csv", index=False)
             backtest_written = True
         else:
