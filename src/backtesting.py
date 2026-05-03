@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import pandas as pd
 
-from forecasting.engine import run_forecast
+from .forecasting.engine import run_forecast
 
 
 def _split_window(usage: pd.DataFrame, train_months: int, test_months: int) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:

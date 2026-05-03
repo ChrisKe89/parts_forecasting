@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from forecasting.calculations import (
+from .calculations import (
     exponential_smoothing,
     holt_forecast,
     safety_stock,
@@ -10,8 +10,8 @@ from forecasting.calculations import (
     usage_per_machine,
     zscore_outliers,
 )
-from inventory.logic import apply_moq, demand_during_lead_time, reorder_point, rolling_ordering_simulation
-from utils.config import ForecastingConfig, DEFAULT_CONFIG
+from ..inventory.logic import apply_moq, demand_during_lead_time, reorder_point, rolling_ordering_simulation
+from ..utils.config import ForecastingConfig, DEFAULT_CONFIG
 
 
 def run_forecast(data: dict[str, pd.DataFrame], config: ForecastingConfig = DEFAULT_CONFIG, as_of_date: pd.Timestamp | None = None) -> pd.DataFrame:
