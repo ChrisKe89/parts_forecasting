@@ -153,3 +153,20 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 `EX200,2026-05-10,25,projected,0.65`
 
 **Validation:** `install_qty >= 0`; confidence in `[0,1]` for projected rows.
+
+
+## Column Input Domain Summary
+
+The following constrained columns enforce finite input domains:
+
+- `orders.csv.order_source`: `dealer`, `direct`, `internal`, `other`
+- `orders.csv.order_status`: `fulfilled`, `partially_fulfilled`, `backorder`, `cancelled`
+- `open_purchase_orders.csv.purchase_order_status`: `open`, `partially_received`, `received`, `cancelled`
+- `active_machine_population.csv.owner_group`: `direct`, `customer`, `dealer`
+- `active_machine_population.csv.service_group`: `direct`, `dealer`
+- `install_forecast.csv.install_status`: `scheduled`, `projected`, `cancelled`
+- `install_forecast.csv.projected_install_confidence`: numeric in `[0,1]`
+
+Arithmetic constraints:
+- `orders.csv.fulfilled_qty <= orders.csv.order_qty`
+- `open_purchase_orders.csv.open_purchase_order_qty = purchase_order_qty - received_qty`

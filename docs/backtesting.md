@@ -1,15 +1,49 @@
-# Backtesting
+# Backtesting (Proof Mode)
 
-Backtesting uses deterministic date slicing with configurable train/test windows.
+Proof mode answers: **Given the same demand, did the model improve service level versus baseline?**
 
-Default runtime window:
-- 18 month train
-- 6 month test
+## Windowing
+- Train window: first 18 months of available history.
+- Test window: final 6 months.
+- Replay cadence: week-by-week over the test window.
 
-Metrics:
-- MAE = mean(|forecast - actual|)
-- RMSE = sqrt(mean((forecast - actual)^2))
-- Bias = mean(forecast - actual)
-- Under/over forecast counts
-- Service level estimate = fraction where forecast >= actual
-- Stockout count from projected stock at arrival < 0
+## Demand and replay contract
+- Replay demand source is `usage_qty` from usage history (`demand_source=usage_only`).
+- Test-period demand is fixed during replay.
+- Stock is carried forward each week (no reset).
+- Backorders are carried forward each week.
+
+## Supplier lifecycle simulation
+Replay includes supplier order state transitions:
+- `open`
+- `partial`
+- `full`
+- `delayed`
+- `cancelled`
+
+Rules:
+- Supplier orders are not instant receipts.
+- Partial receipts add only `received_qty` to stock.
+- Delayed orders keep `remaining_qty` in `stock_on_order`.
+- Cancelled quantities never become stock and are tracked via `cancelled_qty`.
+
+## Metrics produced
+- Service-level comparison: baseline/model/improvement.
+- Fill-rate comparison: baseline/model/improvement.
+- Stockout comparison and reduction.
+- Inventory trade-offs: average/peak/inventory change metrics.
+- Order flow: baseline/model ordered qty, received qty, ending open/backorder quantities.
+- Forecast diagnostics: MAE, RMSE, bias (where provided by run summary).
+
+## Fail and concern behavior
+- Synthetic baseline service-level target is 55%–65%.
+- When `enforce_fail_conditions=True`, run fails if synthetic baseline is out of range.
+- Structured `concerns_report.json` highlights risk categories (service level, inventory realism, etc.).
+
+## Output files
+- `backtest_summary.json`
+- `backtest_weekly_detail.csv`
+- `concerns_report.json`
+- `supplier_order_simulation.csv`
+- `inventory_position_simulation.csv`
+- `model_recommendations.csv`

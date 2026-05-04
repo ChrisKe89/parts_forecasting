@@ -1,25 +1,19 @@
 # Glossary
 
-- **Usage per machine:** Average internal part usage per active machine for a model and time window. Formula: `usage_per_machine = total_usage / active_machine_qty`.
-- **Base forecast:** Demand estimate from historical usage before dealer/install adjustments.
-- **Final demand:** Forecast used by inventory logic. Formula: `final_demand = base_forecast + dealer_demand + install_demand`.
-- **Dealer demand:** Part-level demand from `orders.csv` rows with `order_source=dealer`.
-- **Install demand:** Demand adjustment from install forecast. Scheduled installs count at 100%; projected installs are confidence-weighted.
-- **Allocated stock:** Inventory already reserved for existing commitments.
-- **Backorder:** Unfulfilled order quantity that remains outstanding.
-- **Unfulfilled quantity:** Remaining order amount. Formula: `unfulfilled_qty = order_qty - fulfilled_qty`.
-- **Effective stock:** Usable stock after commitments. Formula: `effective_stock = stock_on_hand_qty - allocated_qty - backorder_qty`.
-- **Pipeline supply:** Open PO quantity expected to arrive by a planning cutoff.
-- **Lead time demand:** Expected demand over replenishment lead time.
-- **Safety stock:** Buffer inventory for uncertainty, commonly `z_score × demand_std_dev × sqrt(lead_time_periods)`.
-- **Reorder point:** Trigger threshold. Formula: `reorder_point = lead_time_demand + safety_stock`.
-- **MOQ (Minimum Order Quantity):** Smallest supplier-acceptable order quantity.
-- **Projected stock:** Expected stock at target date after demand and inbound supply. In this system, final projected stock and reorder decisions are computed per `part_number` after model-level signals are aggregated.
-- **Stockout risk:** Indicator that projected stock may go below zero or below required service threshold.
-- **Z-score:** Standardized distance from mean used for outlier detection.
-- **Exponential smoothing:** Weighted forecasting method emphasizing recent history.
-- **Holt trend:** Double exponential smoothing with level and trend components.
-- **MAE:** Mean Absolute Error.
-- **RMSE:** Root Mean Squared Error.
-- **Forecast bias:** Directional average error (over- vs under-forecast tendency).
-- **Service level:** Estimated proportion of demand met without stockout.
+- **Service level:** Share of demand events fully fulfilled. In replay terms: `count(events with fulfilled_qty >= usage_qty) / count(events)`.
+- **Fill rate:** Volume-based fulfilment ratio. `total_fulfilled_qty / total_usage_qty`.
+- **MOQ (Minimum Order Quantity):** Smallest supplier-accepted order quantity for a part.
+- **Order multiple:** Required pack increment (e.g., order in multiples of 5).
+- **Lead time demand:** Expected demand consumed during replenishment lead time.
+- **Safety stock:** Buffer inventory to protect against uncertainty.
+- **Reorder point (ROP):** Trigger threshold for new orders. `reorder_point = lead_time_demand + safety_stock`.
+- **Stockout:** Demand that cannot be fulfilled immediately from available stock.
+- **Backorder:** Unfulfilled demand carried into subsequent periods.
+- **Partial receipt:** Supplier delivery where only part of ordered quantity is received.
+- **Delayed receipt:** Receipt not arriving by expected date; quantity remains open/on-order.
+- **Forecast bias:** Directional tendency of forecast error (systematic over- or under-forecast).
+- **MAE:** Mean Absolute Error of forecast values versus actual demand.
+- **RMSE:** Root Mean Squared Error of forecast values versus actual demand.
+- **Effective stock:** `stock_on_hand - allocated_qty - backorder_qty`.
+- **Pipeline supply:** Open purchase order quantities arriving before planning need date.
+- **Demand source (usage_only):** Replay/live mode demand basis that uses `usage_qty` only in this proof implementation.

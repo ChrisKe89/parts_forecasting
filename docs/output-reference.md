@@ -1,35 +1,59 @@
 # Output Reference
 
-## forecast_output.csv
-- **Purpose:** Primary part-level forecast and reorder recommendation output.
-- **Important columns:** part_number, base_forecast, final_adjusted_demand, stock_on_hand_qty, allocated_qty, backorder_qty, effective_stock_qty, pipeline_supply_qty, lead_time_demand, safety_stock, reorder_point, projected_stock, reorder_triggered, required_quantity, final_order_quantity, recommendation_explanation.
-- **Decision grain:** exactly one recommendation row per active `part_number`; model-level signals are aggregated before inventory decisioning.
-- **Interpretation:** Use to review demand outlook and whether reorder is triggered under current constraints.
+## Forecast mode (`python -m src.main --mode forecast`)
 
-## backtest_output.csv
-- **Purpose:** Forecast-vs-actual detail for evaluation windows.
-- **Important columns:** part_number, period_start, period_end, forecast_qty, actual_qty, error_qty, abs_error, squared_error.
-- **Interpretation:** Granular performance diagnostics by part and test period.
+### forecast_recommendations.csv
+- **Purpose:** Live recommendation output (no historical replay).
+- **Important columns:** `part_id`, `forecast_demand`, `lead_time_demand`, `safety_stock`, `reorder_point`, `stock_on_hand`, `stock_on_order`, `raw_recommended_qty`, `final_order_qty`, `minimum_order_qty`, `order_multiple_qty`, `moq_applied`, `order_multiple_applied`, `risk_level`, `explanation`, `demand_source`.
+- **Demand contract:** `demand_source` is `usage_only` in current proof implementation.
 
-## validation_report.csv
-- **Purpose:** Runtime data and business-rule validation findings.
-- **Important columns:** severity, check_name, file_name, row_number, message.
-- **Interpretation:** Operational validation results; warnings allow continuation, errors typically block forecast.
+## Backtest/proof mode (`python -m src.main --mode backtest`)
 
-## validation_summary.csv
-- **Purpose:** Aggregated validation counts and status.
-- **Important columns:** severity, issue_count, blocking_status.
-- **Interpretation:** Quick health summary before consuming forecast outputs.
+### backtest_summary.json
+- **Purpose:** Top-line proof answer for baseline vs model outcomes.
+- **Includes:**
+  - `baseline_service_level`, `model_service_level`, `service_level_improvement`
+  - `baseline_fill_rate`, `model_fill_rate`, `fill_rate_improvement`
+  - `baseline_stockout_count`, `model_stockout_count`, `stockout_reduction`
+  - `average_inventory_baseline`, `average_inventory_model`, `inventory_change`, `inventory_change_percent`
+  - `peak_inventory_baseline`, `peak_inventory_model`
+  - `total_ordered_qty_baseline`, `total_ordered_qty_model`, `total_received_qty_model`
+  - `total_open_order_qty_end`, `total_backorder_qty_end`
+  - `true_demand`, `model_fulfilled_qty`, `model_unfulfilled_qty`
+  - supplier lifecycle summary fields (`total_supplier_orders_created`, `total_partial_receipts`, `total_delayed_receipts`, `total_cancelled_qty`, `total_remaining_open_qty`, status counts)
 
-## schema_validation_report.csv
-- **Purpose:** Schema-contract validation output for CSV structure/content checks.
-- **Important columns:** file_name, column_name, row_number, severity, message.
-- **Interpretation:** Canonical contract-compliance report; errors stop forecasting and warnings are retained for follow-up.
+### backtest_weekly_detail.csv
+- **Purpose:** Weekly replay detail at part-week grain.
+- **Important columns:** `opening_stock`, `usage_qty`, `fulfilled_qty`, `unfulfilled_qty`, `receipts_qty`, `backorder_qty`, `stock_on_order`, `closing_stock`, `raw_recommended_qty`, `final_order_qty`, MOQ/multiple flags.
 
+### concerns_report.json
+- **Purpose:** Structured PRD concern checks + human-readable result summary.
+- **Shape:**
+  ```json
+  {
+    "concerns": [{"type": "service_level", "severity": "high", "message": "..."}],
+    "human_readable_summary": {
+      "result": "improved|not_improved",
+      "baseline_service_level": 0.60,
+      "model_service_level": 0.78,
+      "service_level_improvement": 0.18
+    }
+  }
+  ```
 
-## Runtime behavior
-- Default run: `python -m src.main`
-- Default input directory: `data/raw`
-- Default output directory: `data/output` (created automatically if missing)
-- `install_forecast.csv` is optional; when missing, install adjustment is unavailable and treated as zero contribution.
-- Backtest may be skipped when historical span is insufficient; forecast outputs are still written.
+### supplier_order_simulation.csv
+- **Purpose:** Supplier lifecycle records during replay.
+- **Important columns:** `supplier_order_id`, `part_id`, `order_date`, `original_order_qty`, `received_qty`, `cancelled_qty`, `remaining_qty`, `expected_arrival_date`, `actual_arrival_date`, `receipt_status`.
+- **Status values:** `open`, `partial`, `full`, `delayed`, `cancelled`.
+
+### inventory_position_simulation.csv
+- **Purpose:** Persisted copy of weekly stock position simulation for audit tooling.
+
+### model_recommendations.csv
+- **Purpose:** Current model recommendations written during backtest run for side-by-side inspection.
+
+## Validation output
+
+### schema_validation_report.csv
+- **Purpose:** Canonical schema-contract validation output.
+- **Behavior:** Errors block execution; warnings continue and are reported.
