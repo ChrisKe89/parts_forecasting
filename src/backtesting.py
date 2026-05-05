@@ -13,10 +13,19 @@ from .inventory.logic import apply_order_constraints
 
 def _train_test_dates(usage: pd.DataFrame, train_months: int = 18, test_months: int = 6) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp, pd.Timestamp]:
     date_col = "usage_date" if "usage_date" in usage.columns else "week_start_date"
+    usage_dates = pd.Series(pd.to_datetime(usage[date_col].dropna()).sort_values().unique())
     test_end = usage[date_col].max()
     test_start = test_end - pd.DateOffset(months=test_months) + pd.DateOffset(days=1)
     train_start = test_start - pd.DateOffset(months=train_months)
     train_end = test_start - pd.DateOffset(days=1)
+    train_mask = (usage[date_col] >= train_start) & (usage[date_col] <= train_end)
+    if not train_mask.any() and len(usage_dates) > 1:
+        test_periods = max(1, math.ceil(len(usage_dates) * test_months / (train_months + test_months)))
+        split_index = max(1, len(usage_dates) - test_periods)
+        train_start = usage_dates.iloc[0]
+        train_end = usage_dates.iloc[split_index - 1]
+        test_start = usage_dates.iloc[split_index]
+        test_end = usage_dates.iloc[-1]
     return train_start, train_end, test_start, test_end
 
 

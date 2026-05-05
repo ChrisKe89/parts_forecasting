@@ -15,3 +15,4 @@ The format follows Keep a Changelog and this project uses Semantic Versioning.
 
 - Forecasting now uses configured smoothing groups, applies Holt's method only after documented history and trend gates pass, and calculates safety stock from observed demand variability and service-level target.
 - Loader now passes dealer orders into forecasting, maps model-only install forecasts to compatible parts, and limits backorder quantities to dealer demand.
+- Backtesting now preserves the documented train/test ratio for short-history datasets instead of replaying with an empty training window.

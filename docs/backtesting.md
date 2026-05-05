@@ -6,6 +6,7 @@ Proof mode answers: **Given the same demand, did the model improve service level
 
 - Train window: first 18 months of available history.
 - Test window: final 6 months.
+- Short-history fixtures that cannot fill the calendar window preserve the same 18:6 train/test ratio by dated observation count.
 - Replay cadence: week-by-week over the test window.
 
 ## Demand and replay contract
