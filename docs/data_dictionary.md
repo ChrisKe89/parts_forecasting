@@ -3,6 +3,7 @@
 This repository uses the schema contract defined in `docs/data-schema.md`.
 
 Canonical identifiers and key fields include:
+
 - `part_number`
 - `model`
 - `usage_date`, `order_date`, `install_date`, `stock_snapshot_date`

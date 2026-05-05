@@ -1,0 +1,8 @@
+metric,value,calculation
+dealer_order_lines,10,count rows in orders.csv where order_source=dealer and order_status<>cancelled
+fully_fulfilled_dealer_order_lines,6,count dealer rows where fulfilled_qty = order_qty
+line_service_level,0.6,6 / 10
+dealer_order_qty,100,sum order_qty for dealer non-cancelled orders
+dealer_fulfilled_qty,60,sum fulfilled_qty for dealer non-cancelled orders
+unit_fill_rate,0.6,60 / 100
+backorder_qty,40,sum(order_qty - fulfilled_qty) where status in backorder/partially_fulfilled

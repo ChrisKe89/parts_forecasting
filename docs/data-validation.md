@@ -1,6 +1,7 @@
 # Data Validation Behavior
 
 ## Global CSV Rules
+
 - UTF-8 CSV with header row.
 - Header names must exactly match `docs/data-schema.md`.
 - No duplicate columns.
@@ -8,6 +9,7 @@
 - Numeric columns must parse as numeric without silent coercion.
 
 ## Severity Model
+
 - **Errors:** stop forecasting execution.
 - **Warnings:** captured in report; processing continues.
 
@@ -39,8 +41,10 @@
 | install_forecast.csv (if present) | projected_install_confidence | numeric in `[0,1]` |
 
 ## Cross-Table Validation
+
 - Unknown model when joining usage with active population is logged as a warning.
 
 ## Validation Output File
+
 Validation issues are written to `schema_validation_report.csv` with columns:
 `file_name,column_name,row_number,severity,message`.

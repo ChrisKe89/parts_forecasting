@@ -1,4 +1,0 @@
-part_number,base_forecast,final_adjusted_demand,stock_on_hand_qty,allocated_qty,backorder_qty,effective_stock_qty,pipeline_supply_qty,lead_time_demand,safety_stock,reorder_point,projected_stock,reorder_triggered,required_quantity,final_order_quantity,recommendation_explanation
-CWAA1234,2.839815486316442,2.839815486316442,18.0,0.0,0.0,18.0,10.0,36.51191339549711,1.419907743158221,37.93182113865533,-8.51191339549711,True,46.44373453415244,46.44373453415244,usage_qty only demand; reorder based on ROP
-CWAA5678,2.117539973721031,2.117539973721031,12.0,0.0,0.0,12.0,0.0,27.22551394784183,1.0587699868605156,28.284283934702344,-15.22551394784183,True,43.50979788254418,43.50979788254418,usage_qty only demand; reorder based on ROP
-CWAA9999,1.0,1.0,1.0,0.0,0.0,1.0,5.0,17.142857142857142,0.5,17.642857142857142,-11.142857142857142,True,28.785714285714285,28.785714285714285,usage_qty only demand; reorder based on ROP

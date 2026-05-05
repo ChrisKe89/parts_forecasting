@@ -1,0 +1,9 @@
+{
+  "concerns": [],
+  "human_readable_summary": {
+    "result": "improved",
+    "baseline_service_level": 0.6,
+    "model_service_level": 0.7708333333333334,
+    "service_level_improvement": 0.1708333333333334
+  }
+}

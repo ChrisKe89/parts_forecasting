@@ -138,7 +138,7 @@ def load_inputs(base_dir: Path) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, 
     for idx in orders[bad_fulfilled.fillna(False)].index.tolist():
         issues.append(_issue("orders.csv", "fulfilled_qty", int(idx)+2, "error", "fulfilled_qty cannot exceed order_qty"))
 
-    backorder = orders.copy()
+    backorder = orders[orders["order_source"].astype(str).str.lower() == "dealer"].copy()
     backorder["unfulfilled_qty"] = (backorder["order_qty"] - backorder["fulfilled_qty"]).clip(lower=0)
     backorder = backorder[backorder["order_status"].isin(["partially_fulfilled", "backorder"])].groupby("part_number", as_index=False)["unfulfilled_qty"].sum()
 
@@ -164,11 +164,14 @@ def load_inputs(base_dir: Path) -> tuple[dict[str, pd.DataFrame], pd.DataFrame, 
         _parse_date(installs, "install_forecast.csv", "install_date", issues)
         _non_negative(installs, "install_forecast.csv", "install_qty", issues)
         _validate_confidence(installs, "install_forecast.csv", "projected_install_confidence", issues)
+        if "part_number" not in installs.columns:
+            installs = installs.merge(mapping, on="model", how="left")
 
     has_errors = any(i["severity"] == "error" for i in issues)
     data = {
         "parts": parts[["part_number", "part_name", "model", "smoothing_group", "minimum_order_quantity", "lead_time_days"]],
         "usage": usage[["part_number", "model", "usage_date", "usage_qty", "active_machines"]],
+        "orders": orders[["part_number", "order_date", "order_qty", "fulfilled_qty", "order_source", "order_status"]],
         "installs": installs[["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]] if "part_number" in installs.columns else pd.DataFrame(columns=["part_number", "model", "install_date", "install_qty", "install_status", "projected_install_confidence"]),
         "stock": stock[["part_number", "snapshot_date", "stock_on_hand_qty", "allocated_qty", "unfulfilled_qty", "open_purchase_order_qty", "expected_arrival_date"]],
     }

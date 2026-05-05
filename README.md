@@ -36,6 +36,7 @@ python -m src.main
 ## Expected outputs
 
 See `docs/output-reference.md` for output definitions:
+
 - `forecast_output.csv`
 - `backtest_output.csv`
 - `validation_report.csv`
@@ -52,4 +53,8 @@ pytest -q
 
 Synthetic and test data are for development/testing support only and are not part of normal production workflow.
 
-Runtime note: `python -m src.main` reads real CSVs from `data/raw` by default and never generates synthetic data. Use `python -m src.data.synthetic_generator` for synthetic test data only. Backtest runs in default `--mode all` when enough history exists; otherwise forecast still completes and backtest is skipped with a message.
+Runtime note: `python -m src.main` reads real CSVs from `data/raw` by default and never generates synthetic data.
+
+Use `python -m src.data.synthetic_generator` for synthetic test data only.
+
+Backtest runs in default `--mode all` when enough history exists; otherwise forecast still completes and backtest is skipped with a message.

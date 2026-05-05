@@ -1,4 +1,6 @@
 part_number,part_description,smoothing_group,minimum_order_qty,default_lead_time_days,is_active
-CWAA1234,Fuser Unit,A,5,90,true
-CWAA5678,Feed Roll Kit,B,10,90,true
-CWAA9999,Transfer Belt,C,2,120,true
+P-1001,Fuser Roller Kit,A,5,30,true
+P-1002,Transfer Belt Assembly,A,2,45,true
+P-1003,Feed Pickup Roller,B,10,21,true
+P-1004,Waste Toner Sensor,B,1,35,true
+P-1005,Developer Motor,C,1,60,true

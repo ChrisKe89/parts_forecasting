@@ -1,8 +1,11 @@
 import json
 
+import pandas as pd
+
 from src.backtesting import run_backtest
 from src.data.synthetic_generator import generate_synthetic_data
 from src.forecasting.engine import run_forecast
+from src.utils.config import ForecastingConfig
 
 
 def test_synthetic_scale_and_baseline(tmp_path):
@@ -37,6 +40,164 @@ def test_live_forecast_fields_and_moq(tmp_path):
         "moq_applied", "order_multiple_applied", "risk_level", "explanation", "demand_source",
     }
     assert required.issubset(set(f.columns))
+
+
+def test_forecast_combines_prd_demand_signals_and_inventory_position():
+    weeks = pd.date_range("2026-01-05", periods=6, freq="W-MON")
+    data = {
+        "parts": pd.DataFrame(
+            [
+                {
+                    "part_number": "P1",
+                    "part_name": "Filter",
+                    "model": "M1",
+                    "smoothing_group": "B",
+                    "minimum_order_quantity": 5,
+                    "lead_time_days": 14,
+                }
+            ]
+        ),
+        "usage": pd.DataFrame(
+            {
+                "part_number": ["P1"] * 6,
+                "model": ["M1"] * 6,
+                "usage_date": weeks,
+                "usage_qty": [10] * 6,
+                "active_machines": [5] * 6,
+            }
+        ),
+        "orders": pd.DataFrame(
+            {
+                "part_number": ["P1"] * 12,
+                "order_date": list(weeks) * 2,
+                "order_qty": [1] * 6 + [100] * 6,
+                "fulfilled_qty": [1] * 12,
+                "order_source": ["dealer"] * 6 + ["direct"] * 6,
+                "order_status": ["fulfilled"] * 12,
+            }
+        ),
+        "installs": pd.DataFrame(
+            [
+                {
+                    "part_number": "P1",
+                    "model": "M1",
+                    "install_date": pd.Timestamp("2026-01-26"),
+                    "install_qty": 3,
+                    "install_status": "scheduled",
+                    "projected_install_confidence": 1.0,
+                },
+                {
+                    "part_number": "P1",
+                    "model": "M1",
+                    "install_date": pd.Timestamp("2026-01-26"),
+                    "install_qty": 4,
+                    "install_status": "projected",
+                    "projected_install_confidence": 0.5,
+                },
+                {
+                    "part_number": "P1",
+                    "model": "M1",
+                    "install_date": pd.Timestamp("2026-01-26"),
+                    "install_qty": 99,
+                    "install_status": "cancelled",
+                    "projected_install_confidence": 1.0,
+                },
+            ]
+        ),
+        "stock": pd.DataFrame(
+            [
+                {
+                    "part_number": "P1",
+                    "snapshot_date": pd.Timestamp("2026-01-19"),
+                    "stock_on_hand_qty": 100,
+                    "allocated_qty": 3,
+                    "unfulfilled_qty": 4,
+                    "open_purchase_order_qty": 8,
+                    "expected_arrival_date": pd.Timestamp("2026-01-26"),
+                },
+                {
+                    "part_number": "P1",
+                    "snapshot_date": pd.Timestamp("2026-01-19"),
+                    "stock_on_hand_qty": 100,
+                    "allocated_qty": 3,
+                    "unfulfilled_qty": 4,
+                    "open_purchase_order_qty": 99,
+                    "expected_arrival_date": pd.Timestamp("2026-03-01"),
+                },
+            ]
+        ),
+    }
+
+    forecast = run_forecast(
+        data,
+        as_of_date=pd.Timestamp("2026-01-19"),
+        config=ForecastingConfig(smoothing_groups={"B": 0.5}, service_level_target=0.90),
+    )
+
+    row = forecast.iloc[0]
+    assert row["base_forecast_demand"] == 10.0
+    assert row["dealer_demand"] == 1.0
+    assert row["usage_per_machine"] == 2.0
+    assert row["install_adjustment"] == 10.0
+    assert row["forecast_demand"] == 21.0
+    assert row["effective_stock"] == 93.0
+    assert row["pipeline_supply"] == 8.0
+    assert row["projected_stock"] == 59.0
+    assert row["final_order_qty"] == 0.0
+    assert row["demand_source"] == "usage_dealer_install"
+
+
+def test_forecast_uses_holt_only_when_history_and_trend_gate_pass():
+    weeks = pd.date_range("2026-01-05", periods=6, freq="W-MON")
+    base_data = {
+        "parts": pd.DataFrame(
+            [
+                {
+                    "part_number": "P1",
+                    "part_name": "Filter",
+                    "model": "M1",
+                    "smoothing_group": "A",
+                    "minimum_order_quantity": 0,
+                    "lead_time_days": 7,
+                }
+            ]
+        ),
+        "usage": pd.DataFrame(
+            {
+                "part_number": ["P1"] * 6,
+                "model": ["M1"] * 6,
+                "usage_date": weeks,
+                "usage_qty": [10, 12, 14, 16, 18, 20],
+                "active_machines": [10] * 6,
+            }
+        ),
+        "stock": pd.DataFrame(
+            [
+                {
+                    "part_number": "P1",
+                    "snapshot_date": pd.Timestamp("2026-02-09"),
+                    "stock_on_hand_qty": 0,
+                    "allocated_qty": 0,
+                    "unfulfilled_qty": 0,
+                    "open_purchase_order_qty": 0,
+                    "expected_arrival_date": pd.Timestamp("2026-02-09"),
+                }
+            ]
+        ),
+    }
+    config = ForecastingConfig(
+        smoothing_groups={"A": 0.5},
+        beta=0.5,
+        minimum_history_points_for_holt=6,
+        trend_significance_threshold=0.05,
+    )
+
+    trended = run_forecast(base_data, config=config).iloc[0]
+    short_history = run_forecast({**base_data, "usage": base_data["usage"].head(5)}, config=config).iloc[0]
+
+    assert trended["forecast_method"] == "holt"
+    assert trended["forecast_trend"] > 0
+    assert short_history["forecast_method"] == "exponential_smoothing"
 
 
 from src.data.loader import load_inputs

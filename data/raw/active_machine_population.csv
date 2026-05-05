@@ -1,5 +1,4 @@
 model,population_snapshot_date,active_machine_qty,owner_group,service_group
-Apeos C7070,2026-05-01,120,direct,direct
-Apeos C7070,2026-05-01,80,customer,dealer
-Apeos C6570,2026-05-01,70,customer,direct
-Apeos C6570,2026-05-01,140,dealer,dealer
+AP500,2026-07-31,120,customer,dealer
+AP700,2026-07-31,80,customer,dealer
+CP900,2026-07-31,50,direct,direct

@@ -1,12 +1,14 @@
 # Data Schema Contract
 
 ## Global Rules
+
 - Inputs are CSV files with headers exactly matching the documented column names.
 - Required files must exist and include all required columns.
 - Optional files may be absent; if present, they must match schema.
 - No generic column names such as `date` or `qty`.
 
 ## Required Files
+
 - `parts_master.csv`
 - `part_model_mapping.csv`
 - `internal_parts_usage.csv`
@@ -16,15 +18,18 @@
 - `active_machine_population.csv`
 
 ## Optional File
+
 - `install_forecast.csv`
 
 ## 1) parts_master.csv
+
 **Purpose:** Part attributes and planning defaults.
 
 **Required columns:**
 `part_number,part_description,smoothing_group,minimum_order_qty,default_lead_time_days,is_active`
 
 **Allowed values / rules:**
+
 - `minimum_order_qty >= 0`
 - `default_lead_time_days > 0`
 - `is_active` boolean-like (`true/false`, `1/0`, or canonical boolean)
@@ -35,6 +40,7 @@
 **Validation:** Unique `part_number`; no null required fields.
 
 ## 2) part_model_mapping.csv
+
 **Purpose:** Defines compatible model relationships per part.
 
 **Required columns:**
@@ -46,6 +52,7 @@
 **Validation:** `(part_number, model)` pair unique; `part_number` must exist in `parts_master.csv`.
 
 ## 3) internal_parts_usage.csv
+
 **Purpose:** Internal service usage demand history.
 
 **Required columns:**
@@ -55,6 +62,7 @@
 `machine_serial,service_order_no,technician_id`
 
 **Allowed values / rules:**
+
 - `usage_qty >= 0`
 - `usage_date` valid date
 
@@ -64,6 +72,7 @@
 **Validation:** `part_number`/`model` should match `part_model_mapping.csv`; unknown mappings generate warnings.
 
 ## 4) orders.csv
+
 **Purpose:** Sales/service order activity and fulfilment.
 
 **Required columns:**
@@ -76,6 +85,7 @@
 `fulfilled,partially_fulfilled,backorder,cancelled`
 
 **Derived fields:**
+
 - `unfulfilled_qty = order_qty - fulfilled_qty`
 - `backorder_qty = sum(unfulfilled_qty where order_status in partially_fulfilled/backorder)`
 
@@ -88,12 +98,14 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 **Validation:** quantities non-negative; `fulfilled_qty <= order_qty`.
 
 ## 5) stock_snapshot.csv
+
 **Purpose:** Current inventory position and committed allocation.
 
 **Required columns:**
 `part_number,stock_snapshot_date,stock_on_hand_qty,allocated_qty`
 
 **Derived fields:**
+
 - `available_stock_qty = stock_on_hand_qty - allocated_qty`
 - `effective_stock_qty = stock_on_hand_qty - allocated_qty - backorder_qty`
 
@@ -103,6 +115,7 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 **Validation:** quantities non-negative.
 
 ## 6) open_purchase_orders.csv
+
 **Purpose:** Inbound purchase pipeline.
 
 **Required columns:**
@@ -112,6 +125,7 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 `open,partially_received,received,cancelled`
 
 **Validation:**
+
 - `open_purchase_order_qty = purchase_order_qty - received_qty`
 - Quantities non-negative
 
@@ -119,6 +133,7 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 `PO-221,P-1001,300,120,180,2026-02-20,partially_received,2026-04-15`
 
 ## 7) active_machine_population.csv
+
 **Purpose:** Active installed base by model.
 
 **Required columns:**
@@ -136,6 +151,7 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 **Validation:** `active_machine_qty >= 0`; valid date.
 
 ## 8) install_forecast.csv (Optional)
+
 **Purpose:** Future install activity for demand adjustment.
 
 **Required columns (if provided):**
@@ -145,6 +161,7 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 `scheduled,projected,cancelled`
 
 **Rules:**
+
 - scheduled installs count at 100%
 - projected installs weighted by `projected_install_confidence`
 - cancelled installs ignored
@@ -153,7 +170,6 @@ Dealer orders are part-level demand. Direct/internal orders are not counted as f
 `EX200,2026-05-10,25,projected,0.65`
 
 **Validation:** `install_qty >= 0`; confidence in `[0,1]` for projected rows.
-
 
 ## Column Input Domain Summary
 
@@ -168,5 +184,6 @@ The following constrained columns enforce finite input domains:
 - `install_forecast.csv.projected_install_confidence`: numeric in `[0,1]`
 
 Arithmetic constraints:
+
 - `orders.csv.fulfilled_qty <= orders.csv.order_qty`
 - `open_purchase_orders.csv.open_purchase_order_qty = purchase_order_qty - received_qty`

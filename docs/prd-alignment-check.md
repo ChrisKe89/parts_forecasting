@@ -23,4 +23,5 @@
 | 19. Documentation/glossary | Complete | `docs/output-reference.md`, `docs/backtesting.md`, and `docs/glossary.md` harmonized with current outputs and definitions. |
 
 ## Remaining PRD Gaps
+
 - Loader/schema files were not deeply reworked in this patch; alignment is functional but not exhaustively validated for every optional column variant.
